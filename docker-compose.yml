@@ -1,0 +1,20 @@
+version: "3"
+services:
+  cozy-discord:
+    image: ghcr.io/quiltmc/cozy-discord:latest
+    container_name: cozy-discord
+
+    restart: always
+
+    volumes:
+      - "cozy-discord-data:/data"
+
+    environment:
+      - "GUILDS=817576132726620200,833872081585700874"
+      - "ENVIRONMENT=prod"
+      - "MODE=quilt"
+
+      - TOKEN
+
+volumes:
+  cozy-discord-data:

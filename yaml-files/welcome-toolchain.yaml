@@ -1,0 +1,18 @@
+- type: text
+  text: https://cdn.discordapp.com/attachments/863707104903561216/965007265734230066/toolchain-header.png
+
+- type: embed
+
+  embeds:
+    - title: This server is defunct!
+
+      description: >
+          Hello!
+
+
+          **This server is no longer in use.** If you'd like to keep up (and chat with) the developers, please feel
+          free to join [the main Discord server](https://discord.gg/M7GpuyTBvy).
+
+
+          This server will remain in read-only mode indefinitely, just in case anyone wishes to refer to things that
+          were discussed here.
