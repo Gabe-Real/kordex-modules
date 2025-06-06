@@ -5,16 +5,14 @@ services:
     container_name: cozy-discord
 
     restart: always
-
     volumes:
       - "cozy-discord-data:/data"
 
     environment:
-      - "GUILDS=817576132726620200,833872081585700874"
-      - "ENVIRONMENT=prod"
-      - "MODE=quilt"
-
-      - TOKEN
+      - "GUILDS=${GUILDS:-817576132726620200,833872081585700874}"
+      - "ENVIRONMENT=${ENVIRONMENT:-prod}"
+      - "MODE=${MODE:-quilt}"
+      - "TOKEN=${TOKEN}"
 
 volumes:
   cozy-discord-data:
