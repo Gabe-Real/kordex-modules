@@ -2,9 +2,6 @@ name: Build (PRs/Other)
 
 on:
   push:
-    branches-ignore:
-      - root
-      - develop
 
     paths-ignore:
       - "yaml-files/**"
@@ -30,6 +27,57 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
+      - name: Update version in build.gradle.kts
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            # For pushes, generate proper version numbers
+            git fetch --tags
+            
+            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+              # For main branch, use semantic versioning with auto-increment
+              LATEST_TAG=$(git tag -l "v*.*.*" --sort=-version:refname | head -n1)
+              if [[ -z "$LATEST_TAG" ]]; then
+                # No previous tags, start with v1.0.0
+                VERSION="1.0.0"
+              else
+                # Extract version numbers and increment patch version
+                LATEST_TAG=${LATEST_TAG#v}  # Remove 'v' prefix
+                IFS='.' read -ra VERSION_PARTS <<< "$LATEST_TAG"
+                MAJOR=${VERSION_PARTS[0]}
+                MINOR=${VERSION_PARTS[1]}
+                PATCH=${VERSION_PARTS[2]}
+                # Increment patch version
+                PATCH=$((PATCH + 1))
+                VERSION="${MAJOR}.${MINOR}.${PATCH}"
+              fi
+            else
+              # For other branches, use branch name with incremental number as version
+              BRANCH_NAME="${{ github.ref_name }}"
+              LATEST_BRANCH_TAG=$(git tag -l "${BRANCH_NAME}-*" --sort=-version:refname | head -n1)
+              if [[ -z "$LATEST_BRANCH_TAG" ]]; then
+                # No previous tags for this branch, start with 1
+                VERSION="${BRANCH_NAME}-1-SNAPSHOT"
+              else
+                # Extract number and increment
+                TAG_NUMBER=${LATEST_BRANCH_TAG##*-}
+                TAG_NUMBER=$((TAG_NUMBER + 1))
+                VERSION="${BRANCH_NAME}-${TAG_NUMBER}-SNAPSHOT"
+              fi
+            fi
+          else
+            # For pull requests, use PR number
+            VERSION="pr-${{ github.event.number }}-SNAPSHOT"
+          fi
+          
+          echo "Updating build.gradle.kts with version: ${VERSION}"
+          
+          # Update the version in build.gradle.kts
+          sed -i "s/version = \".*\"/version = \"${VERSION}\"/" build.gradle.kts
+          
+          # Verify the change
+          echo "Updated version in build.gradle.kts:"
+          grep "version =" build.gradle.kts
+
       - name: Gradle (Build)
         run: ./gradlew build --no-daemon
 
@@ -53,3 +101,130 @@ jobs:
         with:
           name: Module JARs
           path: module-*/build/libs/*.jar
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Generate release tag
+        id: tag
+        if: github.event_name == 'push'
+        run: |
+          # Get the latest tag that matches our pattern
+          git fetch --tags
+          
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            # For main branch, use semantic versioning with auto-increment
+            LATEST_TAG=$(git tag -l "v*.*.*" --sort=-version:refname | head -n1)
+            if [[ -z "$LATEST_TAG" ]]; then
+              # No previous tags, start with v1.0.0
+              NEW_TAG="v1.0.0"
+            else
+              # Extract version numbers and increment patch version
+              LATEST_TAG=${LATEST_TAG#v}  # Remove 'v' prefix
+              IFS='.' read -ra VERSION_PARTS <<< "$LATEST_TAG"
+              MAJOR=${VERSION_PARTS[0]}
+              MINOR=${VERSION_PARTS[1]}
+              PATCH=${VERSION_PARTS[2]}
+              # Increment patch version
+              PATCH=$((PATCH + 1))
+              NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+            fi
+          else
+            # For other branches, use branch name with incremental number
+            BRANCH_NAME="${{ github.ref_name }}"
+            LATEST_BRANCH_TAG=$(git tag -l "${BRANCH_NAME}-*" --sort=-version:refname | head -n1)
+            if [[ -z "$LATEST_BRANCH_TAG" ]]; then
+              # No previous tags for this branch, start with 1
+              NEW_TAG="${BRANCH_NAME}-1"
+            else
+              # Extract number and increment
+              TAG_NUMBER=${LATEST_BRANCH_TAG##*-}
+              TAG_NUMBER=$((TAG_NUMBER + 1))
+              NEW_TAG="${BRANCH_NAME}-${TAG_NUMBER}"
+            fi
+          fi
+          
+          echo "tag=${NEW_TAG}" >> $GITHUB_OUTPUT
+          echo "Generated tag: ${NEW_TAG}"
+
+      - name: Check tag uniqueness and create
+        id: create_tag
+        if: github.event_name == 'push'
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          
+          # Check if tag already exists (extra safety)
+          if git rev-parse "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists, appending timestamp"
+            TIMESTAMP=$(date +%s)
+            TAG="${TAG}-${TIMESTAMP}"
+          fi
+          
+          # Create and push the tag
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${TAG}"
+          git push origin "${TAG}"
+          
+          echo "final_tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Created and pushed tag: ${TAG}"
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.create_tag.outputs.final_tag }}
+          name: "Release ${{ steps.create_tag.outputs.final_tag }}"
+          body: |
+            ## Changes
+            - Built from commit ${{ github.sha }}
+            - Branch: ${{ github.ref_name }}
+            - Auto-generated version: ${{ steps.create_tag.outputs.final_tag }}
+            
+            ## Artifacts
+            - Main JAR: Available in workflow artifacts and attached to this release
+            - Docker Image: `ghcr.io/${{ github.repository }}:${{ github.ref_name }}`
+            
+            ## Installation
+            ### Docker
+            ```bash
+            docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ```
+            
+            ### JAR
+            Download the attached JAR files and run with:
+            ```bash
+            java -jar CozyDiscord-*-all.jar
+            ```
+          artifacts: |
+            build/libs/*-all.jar
+            build/libs/*.jar
+            module-*/build/libs/*.jar
+          draft: false
+          prerelease: ${{ github.ref_name != 'main' }}
+          allowUpdates: false
+          skipIfReleaseExists: true
+          token: ${{ secrets.GITHUB_TOKEN }}

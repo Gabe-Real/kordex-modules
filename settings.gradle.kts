@@ -11,7 +11,7 @@ pluginManagement {
 	}
 }
 
-rootProject.name = "CozyDiscord"
+rootProject.name = "RtuuyDiscord"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 

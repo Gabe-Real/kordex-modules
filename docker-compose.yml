@@ -1,12 +1,11 @@
 version: "3"
 services:
-  cozy-discord:
-    image: ghcr.io/quiltmc/cozy-discord:latest
-    container_name: cozy-discord
-
+  rtuuy-discord:
+    image: ghcr.io/gabe-real/rtuuy-discord:latest
+    container_name: crtuuy-discord
     restart: always
     volumes:
-      - "cozy-discord-data:/data"
+      - "rtuuy-discord-data:/data"
 
     environment:
       - "DB_URL=${DB_URL}"
@@ -14,4 +13,4 @@ services:
       - "TOKEN=${TOKEN}"
 
 volumes:
-  cozy-discord-data:
+  rtuuy-discord-data:

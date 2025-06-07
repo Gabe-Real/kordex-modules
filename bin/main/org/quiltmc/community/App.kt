@@ -6,6 +6,8 @@
 
 @file:OptIn(PrivilegedIntent::class)
 
+// Jesus christ this took ages to get it to push to github but thanks to lunar hehe, it worked!
+
 package org.quiltmc.community
 
 import dev.kord.common.entity.PresenceStatus

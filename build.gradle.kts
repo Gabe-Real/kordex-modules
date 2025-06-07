@@ -54,7 +54,7 @@ dependencies {
 }
 
 kordEx {
-	version = "2.2.1-SNAPSHOT"
+	version = "1.0.0"
 
 	bot {
 		dataCollection(DataCollection.Minimal)
