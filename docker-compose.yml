@@ -2,7 +2,7 @@ version: "3"
 services:
   rtuuy-discord:
     image: ghcr.io/gabe-real/rtuuy-discord:latest
-    container_name: crtuuy-discord
+    container_name: rtuuy-discord
     restart: always
     volumes:
       - "rtuuy-discord-data:/data"
