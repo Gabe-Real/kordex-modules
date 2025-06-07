@@ -39,6 +39,18 @@ class InformationExtension : Extension() {
 		"\n\n-# **Please note:** this list does not contain all unsupported environments, " +
 		"you may come across other exceptions whilst using this bot."
 
+	val contributors = "This project contains many amazing people aside from just me working on this bot. " +
+		"Take LunarcatOwO for example, without him I would not be able to host this bot or have half of the features " +
+		"it has right now. Here are a few more amazing people with the roles they played" +
+		"\n\n- **Gabe_Real** | Lead developer and owner." +
+		"\n- **LunarcatOwO** | Dockerfile specialist and bug hunter." +
+		"\n- **Gdude2002 + The quilt community** | Original bot design and developer of the libraries used, also " +
+		"helped me a lot to learn kotlin." +
+		"\n- **UpcraftLP** | Inspiration from the rattiest gangs Rtuuy bot." +
+		"\n- **Iseal** | Lead criticiser lmfao." +
+		"\n- **Rattiest gang** | Provider of half the crashlogs I used when testing." +
+		"\n\nAnd all the other amazing people who may have done a touch or two of helping out, it really means a lot."
+
 	override suspend fun setup() {
 		ephemeralSlashCommand {
 			name = "information".toKey()
@@ -83,6 +95,22 @@ class InformationExtension : Extension() {
 					}
 				}
 			}
+
+			ephemeralSubCommand {
+				name = "contributors".toKey()
+				description = "A list of all the contributors working on this project".toKey()
+
+				action {
+					respond {
+						embed {
+							color = DISCORD_BLURPLE
+
+							title = "Information: Contributors"
+							description = contributors
+						}
+					}
+				}
 			}
 		}
 	}
+}
