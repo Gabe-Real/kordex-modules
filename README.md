@@ -1,29 +1,16 @@
-# Cozy: Discord
+# Cozy: Crashes
 
-This repository contains a Discord bot that we make use of to help keep the Quilt community servers running smoothly.
-Its features include, but are not limited to:
+This repository contains a Discord bot that we make use of to help keep modded minecraft communities run smoothly.
+Certain features include:
 
-* A fully-featured suggestions system, with PluralKit support
-* A thread ownership system that allows users to manage and transfer their own threads
-* Moderation tools, such as server and channel locking, mute role permissions syncing, adding staff to threads, and
-  message logging
-* GitHub repository management tools
-* A robust message alerting and filtering system
-* Minecraft snapshot alerting and tracking tools
-* Cross-server ban synchronisation tools
-* Miscellaneous utilities
+* A minecraft crash report parsing system
+* Advanced URL phishing detect system
+* Pluralkit config support
+* Amazing developers willing to do whatever it takes to make you happy.
 
-Most of the features currently implemented within Cozy were designed with Quilt in mind, and haven't been factored out
-into reusable modules. We do plan to do this at some point, but there's a ways to go yet!
+Most of the features currently implemented within Cozy were designed with minecraft in mind, and haven't been
+factored out into reusable modules. We do plan to do this at some point, but there's a ways to go yet!
 
-Functionality is split into several modes:
-
-* `dev`: Development server tooling, including GitHub management
-* `collab`: Quilt Community Collab mode, mostly for ban-sharing
-* `quilt` (default): General community management and user-facing tools
-* `showcase`: Showcase mode, for allowing servers to cross-post their mod screenshots, updates and releases
-
-Modes are specified via the `MODE` environment variable - see below for more information on that.
 
 # Development Requirements
 
@@ -65,27 +52,11 @@ ENVIRONMENT=dev
 
 * `ENVIRONMENT`: `prod` (default) for info logging on SystemErr, `dev` for debug logging on SystemOut
 
-**Settings used by all modes:**
-
-* `COMMUNITY_GUILD_ID`: ID of your "community" server
-* `TOOLCHAIN_GUILD_ID`: ID of your "toolchain" server
-* `GUILDS`: A comma-separated list of guild IDs, if not just the two above
-* `COMMUNITY_MODERATOR_ROLE`: ID of your "community moderator" role
-* `TOOLCHAIN_MODERATOR_ROLE`: ID of your "toolchain moderator" role
-* `MODERATOR_ROLES`: A comma-separated list of moderator role IDs, if not just the two above
-
-**Settings used by mode:** `quilt`
-
-* `SUGGESTION_CHANNEL_ID`: ID of the channel to use for the suggestions system
-* `MESSAGE_LOG_CATEGORIES`: A comma-separated list of category IDs to use for message logging
-
-**Settings used by mode:** `dev`
-
-* `GITHUB_TOKEN`: GitHub auth token, for the GitHub project management commands
-
 Once you've filled out your `.env` file, you can use the `dev` gradle task to launch the bot. If this is your first
-run, you'll want to start with the `quilt` mode as this is the mode that runs the database migrations. After that,
-feel free to set up and test whichever mode you need to work with.
+run, you'll want to start with the `quilt` mode as this is the mode that runs the database migrations. There may
+also be some library errors depending on what version of kotlin your using or what plugins you have active.
+If you need any help with setting it up please feel free to join the [support server](https://discord.gabereal.co.uk)
+and we will help you out. After that, feel free to set up and test whichever mode you need to work with.
 
 # Conventions and Linting
 
@@ -93,7 +64,9 @@ This repository makes use of [detekt](https://detekt.github.io/detekt/), a stati
 formatting rules are contained within [detekt.yml](detekt.yml), but detekt can't verify everything.
 
 To be specific, proper spacing is important for code readability. If your code is too dense, then we're going to ask
-you to fix this problem - so try to bear it in mind. Let's see some examples...
+you to fix this problem and trust me, it's not forgiving lmao. For reference, I had to get 3 friends to help me figure
+out what the issue was and it turns out a string was 3 characters longer than it should've been so I just had to split
+the lines up - so try to bear it in mind. Let's see some examples...
 
 ### Bad
 
