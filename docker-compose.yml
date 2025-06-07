@@ -9,9 +9,8 @@ services:
       - "cozy-discord-data:/data"
 
     environment:
-      - "GUILDS=${GUILDS:-817576132726620200,833872081585700874}"
+      - "DB_URL=${DB_URL}"
       - "ENVIRONMENT=${ENVIRONMENT:-prod}"
-      - "MODE=${MODE:-quilt}"
       - "TOKEN=${TOKEN}"
 
 volumes:
