@@ -9,7 +9,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
   packages: write
   actions: read
 
@@ -188,9 +188,12 @@ jobs:
             TAG="${TAG}-${TIMESTAMP}"
           fi
           
-          # Create and push the tag
+          # Configure git with proper credentials
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          
+          # Create and push the tag
           git tag "${TAG}"
           git push origin "${TAG}"
           
