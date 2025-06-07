@@ -20,7 +20,7 @@ public class ProblematicLauncherProcessor : LogProcessor() {
 			log.abort(
 				"**You seem to be using PolyMC.**\n\n" +
 
-						"As of October 2022, **PolyMC has been taken over by transphobes, antisemites and so on.**" +
+						"As of October 2022, **PolyMC has been taken over by transphobes, antisemites and so on.** " +
 						"The project owner kicked out the existing development and community teams, and replaced them " +
 						"with a group of infamous bigots - and the project is now **barely being maintained at " +
 						"all.** As PolyMC downloads and runs software automatically (and this is done based " +
