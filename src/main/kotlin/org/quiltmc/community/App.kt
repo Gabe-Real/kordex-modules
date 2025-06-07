@@ -8,11 +8,12 @@
 
 package org.quiltmc.community
 
+import dev.kord.common.entity.PresenceStatus
 import dev.kord.gateway.ALL
 import dev.kord.gateway.Intents
 import dev.kord.gateway.PrivilegedIntent
 import dev.kordex.core.ExtensibleBot
-import dev.kordex.core.checks.guildFor
+import dev.kordex.core.utils.env
 import dev.kordex.core.utils.envOrNull
 import dev.kordex.modules.func.phishing.DetectionAction
 import dev.kordex.modules.func.phishing.extPhishing
@@ -20,9 +21,15 @@ import dev.kordex.modules.pluralkit.extPluralKit
 import org.quiltmc.community.cozy.modules.logs.extLogParser
 import org.quiltmc.community.cozy.modules.logs.processors.PiracyProcessor
 import org.quiltmc.community.cozy.modules.logs.processors.ProblematicLauncherProcessor
+import org.quiltmc.community.extensions.InformationExtension
+import org.quiltmc.community.logs.*
 
 val MODE = envOrNull("MODE")?.lowercase() ?: "quilt"
 val ENVIRONMENT = envOrNull("ENVIRONMENT")?.lowercase() ?: "production"
+internal val DISCORD_TOKEN = env("TOKEN")
+const val APP_ICON = "https://cdn.discordapp.com/attachments/1377978022526849115/" +
+	"1380643522423554140/cozy-discord-github.png?ex=68449ffa&is=68434e7a&" +
+	"hm=4257248467fc4df6ecff96b72cd3446ef6cbbb68283b89b88f4e9cf405c13474&"
 
 suspend fun setupCollab() = ExtensibleBot(DISCORD_TOKEN) {
 	common()
@@ -69,13 +76,17 @@ suspend fun setupQuilt() = ExtensibleBot(DISCORD_TOKEN) {
 	database(true)
 	settings()
 
+	presence {
+		status = PresenceStatus.Online
+		playing("with crashlogs \uD83D\uDCDD ")
+	}
 	about {
 		addGeneral(
-			"Cozy: Community",
+			"Cozy: Crashes",
 
-			"Quilt's Discord bot, Community edition.\n\n" +
-				"Provides a ton of commands and other utilities, to help staff with moderation and provide users " +
-				"with day-to-day features on the main Discord server."
+			"An extremely reliable minecraft crash reporting variant of Cozy.\n\n" +
+				"Provides a ton of information on what went wrong so you can get back to playing minecraft" +
+				"in no time."
 		)
 	}
 
@@ -93,20 +104,23 @@ suspend fun setupQuilt() = ExtensibleBot(DISCORD_TOKEN) {
 
 		fillPresences = true
 	}
-
 	extensions {
+		add(::InformationExtension)
 		extPluralKit()
 
 		extLogParser {
 			// Bundled non-default processors
 			processor(PiracyProcessor())
 			processor(ProblematicLauncherProcessor())
-
-			globalPredicate { event ->
-				val guild = guildFor(event)
-
-				guild?.id != COLLAB_GUILD
-			}
+			// Other additional processors
+			processor(NonQuiltLoaderProcessor())
+			processor(RuleBreakingModProcessor())
+			processor(GabeModProcessor())
+			processor(DuplicateModProcessor())
+			processor(FabricMissingProcessor())
+			processor(MissingApiProcessor())
+			processor(ServerWatchdogProcessor())
+			processor(MissingModsTomlProcessor())
 		}
 
 		help {

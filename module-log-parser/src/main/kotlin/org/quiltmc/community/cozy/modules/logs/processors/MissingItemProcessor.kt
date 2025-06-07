@@ -73,6 +73,8 @@ public class MissingItemProcessor : LogProcessor() {
 						"**Some packages did not contain all required classes, fields, or methods. " +
 						"This is usually caused by a missing dependency.**\n"
 					)
+					log.hasProblems = true
+
 					for (pkg in packages) {
 						append("- `$pkg`\n")
 					}
@@ -87,6 +89,8 @@ public class MissingItemProcessor : LogProcessor() {
 						"**Some top-level classes were not found or were missing fields or methods. " +
 						"This is usually caused by a missing dependency.**\n"
 					)
+					log.hasProblems = true
+
 					for (cls in topLevelClasses) {
 						append("- `$cls`\n")
 					}

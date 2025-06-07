@@ -13,9 +13,6 @@ import org.quiltmc.community.cozy.modules.logs.data.Order
 import org.quiltmc.community.cozy.modules.logs.types.LogParser
 import kotlin.math.roundToInt
 
-// Note: I see this in some crash logs, and I don't really understand where it's coming from. However, we parsin'
-// b/c this is still useful info.  -- gdude
-
 private val CPU_REGEX = "\tProcessor Name: ([^\n]+)\n".toRegex(RegexOption.IGNORE_CASE)
 private val CPU_CORES_REGEX = "\tNumber of physical CPUs: (\\d+)\n".toRegex(RegexOption.IGNORE_CASE)
 private val CPU_THREADS_REGEX = "\tNumber of logical CPUs: (\\d+)\n".toRegex(RegexOption.IGNORE_CASE)

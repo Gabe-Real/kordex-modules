@@ -44,7 +44,6 @@ public class LauncherParser : LogParser() {
 				log.launcherVersion = message.split("version: ")[1]
 			}
 		}
-
 		if (launcher == Launcher.Prism && log.launcherVersion != null) {
 			val version: Version = Version.parse(log.launcherVersion!!)
 			if (version.compareTo(Version.parse("7.0")) < 0) {

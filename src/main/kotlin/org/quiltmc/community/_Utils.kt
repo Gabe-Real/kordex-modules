@@ -270,22 +270,21 @@ suspend fun AboutBuilder.addGeneral(name: String, desc: String) {
 				title = name
 
 				thumbnail {
-					url = "https://github.com/QuiltMC/art/blob/master/misc/cozy-icons/original-raster/" +
-						"cozy-discord.png?raw=true"
+					url = APP_ICON
 				}
 			}
 
 			actionRow {
-				linkButton("https://opencollective.com/quiltmc") {
-					label = "Open Collective"
+				linkButton("https://ko-fi.com/gabe_real") {
+					label = "Ko-fi"
 				}
 
-				linkButton("https://github.com/QuiltMC/cozy-discord") {
+				linkButton("https://github.com/Gabe-Real/Rtuuy-discord") {
 					label = "Source Code"
 				}
 
-				linkButton("https://quiltmc.org") {
-					label = "Website"
+				linkButton("https://gabereal.co.uk") {
+					label = "Discord"
 				}
 			}
 		}

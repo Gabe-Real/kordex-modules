@@ -20,7 +20,10 @@ private val PATTERNS = mapOf(
 	": Loading .+ with Fabric Loader (\\S+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Fabric,
 
 	"--fml.forgeVersion, ([^\\s,]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Forge,
-	"MinecraftForge v([^\\s,]+) Initialized".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Forge,  // Older versions
+	// Won't show up in a valid log but here anyways
+	"""^\s*at\s+net\.minecraftforge\..*""".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Forge,
+	// Older versions
+	"MinecraftForge v([^\\s,]+) Initialized".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Forge,
 )
 
 public class LoaderParser : LogParser() {
@@ -33,6 +36,16 @@ public class LoaderParser : LogParser() {
 				?: continue
 
 			log.setLoaderVersion(loader, Version(match.groups[1]!!.value))
+
+			if (loader == LoaderType.Forge) {
+					log.addMessage(
+						"**It looks like you're using the Forge Loader.** " +
+							"Please note that we do not fully support Forge yet but are currently in the works to do so, " +
+							"while we can provide semi-accurate logs not everything will work as intended. " +
+							"Thank you for understanding."
+
+					)
+			}
 
 			return
 		}
