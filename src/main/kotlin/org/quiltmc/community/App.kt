@@ -26,7 +26,7 @@ import org.quiltmc.community.cozy.modules.logs.processors.ProblematicLauncherPro
 import org.quiltmc.community.extensions.InformationExtension
 import org.quiltmc.community.logs.*
 import org.quiltmc.community.logs.plugins.MissingPluginProcessor
-import org.quiltmc.community.logs.plugins.SeallibVersionProcessor
+import org.quiltmc.community.logs.plugins.powergems.SeallibVersionProcessor
 
 val MODE = envOrNull("MODE")?.lowercase() ?: "quilt"
 val ENVIRONMENT = envOrNull("ENVIRONMENT")?.lowercase() ?: "production"
