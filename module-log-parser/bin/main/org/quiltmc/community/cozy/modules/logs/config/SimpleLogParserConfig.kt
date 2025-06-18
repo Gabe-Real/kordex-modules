@@ -11,10 +11,14 @@ import org.quiltmc.community.cozy.modules.logs.parsers.EnvironmentParser
 import org.quiltmc.community.cozy.modules.logs.parsers.LauncherParser
 import org.quiltmc.community.cozy.modules.logs.parsers.LoaderParser
 import org.quiltmc.community.cozy.modules.logs.parsers.MinecraftVersionParser
+import org.quiltmc.community.cozy.modules.logs.parsers.PluginInformationParser
 import org.quiltmc.community.cozy.modules.logs.parsers.fabric.FabricModsParser
 import org.quiltmc.community.cozy.modules.logs.parsers.launchers.ATLauncherParser
 import org.quiltmc.community.cozy.modules.logs.parsers.launchers.MMCLikeParser
 import org.quiltmc.community.cozy.modules.logs.parsers.launchers.TechnicParser
+import org.quiltmc.community.cozy.modules.logs.parsers.plugins.BungeeCordPluginsParser
+import org.quiltmc.community.cozy.modules.logs.parsers.plugins.PaperPluginsParser
+import org.quiltmc.community.cozy.modules.logs.parsers.plugins.VelocityPluginsParser
 import org.quiltmc.community.cozy.modules.logs.parsers.quilt.QuiltModsParser
 import org.quiltmc.community.cozy.modules.logs.processors.*
 import org.quiltmc.community.cozy.modules.logs.processors.quilt.*
@@ -37,14 +41,18 @@ public class SimpleLogParserConfig(private val builder: Builder) : LogParserConf
 	public class Builder {
 		public var parsers: MutableList<LogParser> = mutableListOf(
 			ATLauncherParser(),
+			BungeeCordPluginsParser(),
 			EnvironmentParser(),
 			FabricModsParser(),
 			LauncherParser(),
 			LoaderParser(),
 			MMCLikeParser(),
 			MinecraftVersionParser(),
+			PaperPluginsParser(),
+			PluginInformationParser(),
 			QuiltModsParser(),
 			TechnicParser(),
+			VelocityPluginsParser(),
 		)
 
 		public var processors: MutableList<LogProcessor> = mutableListOf(

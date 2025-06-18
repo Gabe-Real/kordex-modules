@@ -10,4 +10,12 @@ public sealed class LoaderType(public val name: String) {
 	public object Fabric : LoaderType("fabric")
 	public object Forge : LoaderType("forge")
 	public object Quilt : LoaderType("quilt")
+
+	// Plugin platforms
+	public object Paper : LoaderType("paper")
+	public object Spigot : LoaderType("spigot")
+	public object Bukkit : LoaderType("bukkit")
+	public object Velocity : LoaderType("velocity")
+	public object Bungeecord : LoaderType("bungeecord")
+	public object Waterfall : LoaderType("waterfall")
 }

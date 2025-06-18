@@ -21,9 +21,23 @@ private val PATTERNS = mapOf(
 
 	"--fml.forgeVersion, ([^\\s,]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Forge,
 	// Won't show up in a valid log but here anyways
-	"""^\s*at\s+net\.minecraftforge\..*""".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Forge,
-	// Older versions
+	"""^\s*at\s+net\.minecraftforge\..*""".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Forge,	// Older versions
 	"MinecraftForge v([^\\s,]+) Initialized".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Forge,
+
+	// Plugin platforms
+	"Starting minecraft server version ([\\d\\.]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Bukkit,
+	"This server is running CraftBukkit version ([^\\s]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Bukkit,
+	"This server is running Bukkit version ([^\\s]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Bukkit,
+	"This server is running Spigot version ([^\\s]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Spigot,
+	"This server is running Paper version ([^\\s]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Paper,
+	"\\[Server thread/INFO\\]: Starting Minecraft server on .*".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Paper,
+	"You are running paper version ([^\\s]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Paper,
+	"Starting Velocity ([\\d\\.\\w\\-]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Velocity,
+	"Velocity ([\\d\\.\\w\\-]+) is starting up".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Velocity,
+	"Starting BungeeCord version ([^\\s]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Bungeecord,
+	"BungeeCord version ([^\\s]+) by SpigotMC".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Bungeecord,
+	"Starting Waterfall version ([^\\s]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Waterfall,
+	"Waterfall version ([^\\s]+) by PaperMC".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Waterfall,
 )
 
 public class LoaderParser : LogParser() {

@@ -25,6 +25,10 @@ import org.quiltmc.community.cozy.modules.logs.processors.PiracyProcessor
 import org.quiltmc.community.cozy.modules.logs.processors.ProblematicLauncherProcessor
 import org.quiltmc.community.extensions.InformationExtension
 import org.quiltmc.community.logs.*
+import org.quiltmc.community.logs.plugins.MissingPluginProcessor
+import org.quiltmc.community.logs.plugins.PluginErrorProcessor
+import org.quiltmc.community.logs.plugins.ServerVersionCompatibilityProcessor
+import org.quiltmc.community.logs.plugins.powergems.SeallibVersionProcessor
 
 val MODE = envOrNull("MODE")?.lowercase() ?: "quilt"
 val ENVIRONMENT = envOrNull("ENVIRONMENT")?.lowercase() ?: "production"
@@ -123,6 +127,11 @@ suspend fun setupQuilt() = ExtensibleBot(DISCORD_TOKEN) {
 			processor(MissingApiProcessor())
 			processor(ServerWatchdogProcessor())
 			processor(MissingModsTomlProcessor())
+			// Plugin processors
+			processor(MissingPluginProcessor())
+			processor(PluginErrorProcessor())
+			processor(ServerVersionCompatibilityProcessor())
+			processor(SeallibVersionProcessor())
 		}
 
 		help {

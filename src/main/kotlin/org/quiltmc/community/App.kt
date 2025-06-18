@@ -26,6 +26,8 @@ import org.quiltmc.community.cozy.modules.logs.processors.ProblematicLauncherPro
 import org.quiltmc.community.extensions.InformationExtension
 import org.quiltmc.community.logs.*
 import org.quiltmc.community.logs.plugins.MissingPluginProcessor
+import org.quiltmc.community.logs.plugins.PluginErrorProcessor
+import org.quiltmc.community.logs.plugins.ServerVersionCompatibilityProcessor
 import org.quiltmc.community.logs.plugins.powergems.SeallibVersionProcessor
 
 val MODE = envOrNull("MODE")?.lowercase() ?: "quilt"
@@ -127,6 +129,8 @@ suspend fun setupQuilt() = ExtensibleBot(DISCORD_TOKEN) {
 			processor(MissingModsTomlProcessor())
 			// Plugin processors
 			processor(MissingPluginProcessor())
+			processor(PluginErrorProcessor())
+			processor(ServerVersionCompatibilityProcessor())
 			processor(SeallibVersionProcessor())
 		}
 

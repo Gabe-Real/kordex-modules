@@ -3,7 +3,8 @@
 This repository contains a Discord bot that we make use of to help keep modded minecraft communities run smoothly.
 Certain features include:
 
-* A minecraft crash report parsing system
+* A minecraft crash report parsing system for modded and plugin-based servers
+* Support for common plugin platforms (Paper, Spigot, Bukkit, Velocity, BungeeCord, Waterfall)
 * Advanced URL phishing detect system
 * Pluralkit config support
 * Amazing developers willing to do whatever it takes to make you happy.
