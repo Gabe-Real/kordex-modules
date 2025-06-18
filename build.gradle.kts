@@ -21,9 +21,6 @@ allprojects {
 }
 
 dependencies {
-	detektPlugins(libs.detekt)
-	detektPlugins(libs.detekt.libraries)
-
 	implementation(libs.excelkt)
 	implementation(libs.kmongo)
 	implementation(libs.rgxgen)
@@ -82,7 +79,7 @@ graphql {
 
 gitHooks {
 	setHooks(
-		mapOf("pre-commit" to "applyLicenses detekt")
+		mapOf("pre-commit" to "applyLicenses")
 	)
 }
 

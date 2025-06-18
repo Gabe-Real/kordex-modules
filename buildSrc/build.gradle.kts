@@ -26,5 +26,4 @@ dependencies {
 	implementation("com.google.devtools.ksp", "com.google.devtools.ksp.gradle.plugin", "2.1.21-2.0.1")
 	implementation("dev.kordex.gradle.plugins", "kordex", "1.4.1")
 	implementation("dev.yumi", "yumi-gradle-licenser", "1.2.0")
-	implementation("io.gitlab.arturbosch.detekt", "detekt-gradle-plugin", "1.23.6")
 }

@@ -11,9 +11,6 @@ plugins {
 }
 
 dependencies {
-	detektPlugins(libs.detekt)
-	detektPlugins(libs.detekt.libraries)
-
 	implementation(libs.ktor.client.cio)
 
 	implementation(libs.autolink)

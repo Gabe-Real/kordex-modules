@@ -12,7 +12,6 @@ plugins {
 	id("com.google.devtools.ksp")
 	id("dev.kordex.gradle.kordex")
 	id("dev.yumi.gradle.licenser")
-	id("io.gitlab.arturbosch.detekt")
 }
 
 group = "org.quiltmc.community"
@@ -32,11 +31,6 @@ repositories {
 configurations.all {
 	resolutionStrategy.cacheDynamicVersionsFor(10, "seconds")
 	resolutionStrategy.cacheChangingModulesFor(10, "seconds")
-}
-
-detekt {
-	buildUponDefaultConfig = true
-	config.from(rootProject.files("detekt.yml"))
 }
 
 license {
