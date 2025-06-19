@@ -12,7 +12,7 @@ import org.quiltmc.community.cozy.modules.logs.data.Log
 import org.quiltmc.community.cozy.modules.logs.data.Order
 import org.quiltmc.community.cozy.modules.logs.types.LogParser
 
-private val PATTERNS = mapOf(
+private val PATTERNS = linkedMapOf(
 	"\\| Quilt Loader\\s+\\| quilt_loader\\s+\\| (\\S+).+"
 		.toRegex(RegexOption.IGNORE_CASE) to LoaderType.Quilt,  // Quilt mods table
 
@@ -21,15 +21,18 @@ private val PATTERNS = mapOf(
 
 	"--fml.forgeVersion, ([^\\s,]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Forge,
 	// Won't show up in a valid log but here anyways
-	"""^\s*at\s+net\.minecraftforge\..*""".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Forge,	// Older versions
+	"""^\s*at\s+net\.minecraftforge\..*""".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Forge,
+	// Older versions
 	"MinecraftForge v([^\\s,]+) Initialized".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Forge,
+	
 	// Plugin platforms - improved patterns to capture server build versions
 	// More specific patterns first to avoid conflicts
 	"This server is running CraftBukkit version ([^\\s(]+).*Spigot".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Spigot,
 	"This server is running Paper version ([^\\s(]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Paper,
-	"This server is running CraftBukkit version ([^\\s(]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Bukkit,
-	"This server is running Bukkit version ([^\\s(]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Bukkit,
 	"This server is running Spigot version ([^\\s(]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Spigot,
+	"This server is running Bukkit version ([^\\s(]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Bukkit,
+	// Generic CraftBukkit pattern - should come after more specific ones
+	"This server is running CraftBukkit version ([^\\s(]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Bukkit,
 	"You are running paper version ([^\\s(]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Paper,
 	"Starting Velocity ([\\d\\.\\w\\-]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Velocity,
 	"Velocity ([\\d\\.\\w\\-]+) is starting up".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Velocity,
@@ -37,7 +40,7 @@ private val PATTERNS = mapOf(
 	"BungeeCord version ([^\\s]+) by SpigotMC".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Bungeecord,
 	"Starting Waterfall version ([^\\s]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Waterfall,
 	"Waterfall version ([^\\s]+) by PaperMC".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Waterfall,
-		// Fallback patterns for basic Minecraft server detection (will use Bukkit as default)
+	// Fallback patterns for basic Minecraft server detection (will use Bukkit as default)
 	"Starting minecraft server version ([\\d\\.]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Bukkit,
 )
 
