@@ -16,8 +16,26 @@ class NonQuiltLoaderProcessor : LogProcessor() {
 	override val identifier: String = "non-quilt-loader"
 	override val order: Order = Order.Early
 
-	override suspend fun predicate(log: Log, event: Event): Boolean =
-		log.getLoaderVersion(LoaderType.Quilt) == null && log.getLoaders().isNotEmpty()
+	private val pluginPlatforms = setOf(
+		LoaderType.Paper,
+		LoaderType.Spigot,
+		LoaderType.Bukkit,
+		LoaderType.Velocity,
+		LoaderType.Bungeecord,
+		LoaderType.Waterfall
+	)
+
+	override suspend fun predicate(log: Log, event: Event): Boolean {
+		// Only show this message if:
+		// 1. No Quilt loader is detected
+		// 2. There are loaders present
+		// 3. None of the loaders are plugin platforms (since those are valid non-Quilt platforms)
+		val hasQuilt = log.getLoaderVersion(LoaderType.Quilt) != null
+		val hasLoaders = log.getLoaders().isNotEmpty()
+		val hasPluginPlatform = pluginPlatforms.any { log.getLoaderVersion(it) != null }
+		
+		return !hasQuilt && hasLoaders && !hasPluginPlatform
+	}
 
 	override suspend fun process(log: Log) {
 		log.hasProblems = true
