@@ -47,7 +47,7 @@ class InformationExtension : Extension() {
 		"\n- **Gdude2002 + The quilt community** | Original bot design and developer of the libraries used, also " +
 		"helped me a lot to learn kotlin." +
 		"\n- **UpcraftLP** | Inspiration from the rattiest gangs Rtuuy bot." +
-		"\n- **Iseal** | Lead criticiser lmfao." +
+		"\n- **ISeal** | Lead criticiser lmfao." +
 		"\n- **Rattiest gang** | Provider of half the crashlogs I used when testing." +
 		"\n\nAnd all the other amazing people who may have done a touch or two of helping out, it really means a lot."
 
