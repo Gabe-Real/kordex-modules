@@ -52,13 +52,12 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 		
 		// Handle real PowerGems exceptions
 		if (debugException != null && fakeException == null) {
-			val exceptionClass = debugException.groupValues[1]
-			log.addMessage(
+			val exceptionClass = debugException.groupValues[1]			log.addMessage(
 				"**PowerGems Exception Detected** \n" +
 					"Exception in class: `$exceptionClass`" +
 					(errorMessage?.let { "\nError type: `$it`" } ?: "") +
 					(sealLibVersion?.let { "\nSealLib version: `$it`" } ?: "") +
-					"\n\nThis appears to be a real PowerGems error. Check the full stack trace above for more details."
+					"\n\nCheck the full stack trace above for more details."
 			)
 			log.hasProblems = true
 		}
