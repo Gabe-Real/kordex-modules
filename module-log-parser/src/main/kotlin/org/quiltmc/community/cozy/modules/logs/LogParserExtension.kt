@@ -27,7 +27,7 @@ import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import kotlinx.serialization.decodeFromString
+import org.quiltmc.community.cozy.modules.logs.data.LoaderType
 import org.koin.core.component.inject
 import org.quiltmc.community.cozy.modules.logs.config.LogParserConfig
 import org.quiltmc.community.cozy.modules.logs.data.Log
@@ -240,16 +240,46 @@ public class LogParserExtension : Extension() {
 					}
 
 					if (log.getLoaders().isNotEmpty()) {
+						val pluginPlatforms = setOf(
+							LoaderType.Paper,
+							LoaderType.Spigot,
+							LoaderType.Bukkit,
+							LoaderType.Velocity,
+							LoaderType.Bungeecord,
+							LoaderType.Waterfall
+						)
+						
+						val isPluginPlatform = pluginPlatforms.any { log.getLoaderVersion(it) != null }
+						
 						log.getLoaders()
 							.toList()
 							.sortedBy { it.first.name }
 							.forEach { (loader, version) ->
-								appendLine("**Loader:** ${loader.name.capitalizeWords()} (`${version.string}`)")
+								if (isPluginPlatform) {
+									// For plugin platforms, show loader name and version separately
+									appendLine("**Platform:** ${loader.name.capitalizeWords()}")
+									appendLine("**Version:** `${version.string}`")
+								} else {
+									// For mod loaders, keep the original format
+									appendLine("**Loader:** ${loader.name.capitalizeWords()} (`${version.string}`)")
+								}
 							}
 					}
 
+					// Determine if we should say "Plugins" or "Mods"
+					val pluginPlatforms = setOf(
+						LoaderType.Paper,
+						LoaderType.Spigot,
+						LoaderType.Bukkit,
+						LoaderType.Velocity,
+						LoaderType.Bungeecord,
+						LoaderType.Waterfall
+					)
+					val isPluginPlatform = pluginPlatforms.any { log.getLoaderVersion(it) != null }
+					val itemType = if (isPluginPlatform) "Plugins" else "Mods"
+
 					appendLine(
-						"**Mods:** " + if (log.getMods().isNotEmpty()) {
+						"**$itemType:** " + if (log.getMods().isNotEmpty()) {
 							log.getMods().size
 						} else {
 							"None"
@@ -385,7 +415,7 @@ public class LogParserExtension : Extension() {
 	private suspend fun getPastebinConfig(): PastebinConfig {
 		val text = client.get(configUrl).bodyAsText()
 
-		return yaml.decodeFromString(text)
+		return yaml.decodeFromString(PastebinConfig.serializer(), text)
 	}
 
 	private suspend fun checkPredicates(handler: BaseLogHandler, event: Event) =
