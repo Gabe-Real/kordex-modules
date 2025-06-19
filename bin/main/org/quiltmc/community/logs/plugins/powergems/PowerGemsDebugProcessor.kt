@@ -19,8 +19,14 @@ private val POWERGEMS_FAKE_EXCEPTION_REGEX =
 private val POWERGEMS_SEALUTILS_ERROR_REGEX =
 	"""\[SealUtils] The error message is ([A-Z_]+)""".toRegex()
 
+private val POWERGEMS_EXCEPTION_MESSAGE_REGEX =
+	"""\[SealUtils] The exception message is (.+)""".toRegex()
+
+private val POWERGEMS_STACKTRACE_REGEX =
+	"""\[SealUtils] The stacktrace and all of its details known are as follows:""".toRegex()
+
 private val POWERGEMS_VERSION_REGEX =
-	"""SealLib-([\d.\w\-]+)\.jar//""".toRegex()
+	"""PowerGems-([0-9.]+(?:-[A-Z0-9]+)?)\.jar//""".toRegex()
 
 private val POWERGEMS_CONFIG_DUMP_REGEX =
 	"""\[SealUtils] Dump from: ([a-zA-Z]+) -> ([a-zA-Z]+): (.+)""".toRegex()
@@ -28,15 +34,23 @@ private val POWERGEMS_CONFIG_DUMP_REGEX =
 private val POWERGEMS_MANAGER_DUMP_REGEX =
 	"""\[SealUtils] Dump from: ([a-zA-Z]+) -> ([a-zA-Z]+): (.+)""".toRegex()
 
+private val POWERGEMS_PLUGIN_VERSION_REGEX =
+	"""\[PowerGems] PowerGems v([0-9.]+(?:-[A-Z0-9]+)?)""".toRegex()
+
+private val POWERGEMS_COMMAND_ERROR_REGEX =
+	"""\[PowerGems] Loading server plugin PowerGems v([0-9.]+(?:-[A-Z0-9]+)?)""".toRegex()
+
 public class PowerGemsDebugProcessor : LogProcessor() {
 	override val identifier: String = "powergems_debug_processor"
 	override val order: Order = Order.Earlier
-
 	override suspend fun process(log: Log) {
 		val debugException = POWERGEMS_DEBUG_EXCEPTION_REGEX.find(log.content)
 		val fakeException = POWERGEMS_FAKE_EXCEPTION_REGEX.find(log.content)
 		val errorMessage = POWERGEMS_SEALUTILS_ERROR_REGEX.find(log.content)?.groupValues?.get(1)
-		val sealLibVersion = POWERGEMS_VERSION_REGEX.find(log.content)?.groupValues?.get(1)
+		val exceptionMessage = POWERGEMS_EXCEPTION_MESSAGE_REGEX.find(log.content)?.groupValues?.get(1)
+		val hasStacktrace = POWERGEMS_STACKTRACE_REGEX.find(log.content) != null
+		val powerGemsVersion = POWERGEMS_VERSION_REGEX.find(log.content)?.groupValues?.get(1)
+			?: POWERGEMS_PLUGIN_VERSION_REGEX.find(log.content)?.groupValues?.get(1)
 		val configDumps = POWERGEMS_CONFIG_DUMP_REGEX.findAll(log.content).toList()
 		
 		// Handle fake debug exceptions
@@ -52,13 +66,44 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 		
 		// Handle real PowerGems exceptions
 		if (debugException != null && fakeException == null) {
-			val exceptionClass = debugException.groupValues[1]			log.addMessage(
-				"**PowerGems Exception Detected** \n" +
-					"Exception in class: `$exceptionClass`" +
-					(errorMessage?.let { "\nError type: `$it`" } ?: "") +
-					(sealLibVersion?.let { "\nSealLib version: `$it`" } ?: "") +
-					"\n\nCheck the full stack trace above for more details."
-			)
+			val exceptionClass = debugException.groupValues[1]
+			val messageBuilder = StringBuilder("**PowerGems Exception Detected** \n")
+			messageBuilder.append("Exception in class: `$exceptionClass`")
+			
+			errorMessage?.let { 
+				messageBuilder.append("\nError type: `$it`")
+				
+				// Provide specific help for common error types
+				when (it) {
+					"GIVE_GEM_COMMAND" -> {
+						messageBuilder.append("\n\n**Common Cause:** This often happens when using the `/givegem` command without proper arguments.")
+						messageBuilder.append("\n**Solution:** Use the command like `/givegem <player> <gemtype> [level]`")
+						messageBuilder.append("\nExample: `/givegem Steve fire 3`")
+					}
+					"INVALID_GEM_TYPE" -> {
+						messageBuilder.append("\n\n**Common Cause:** Invalid gem type specified.")
+						messageBuilder.append("\n**Solution:** Use valid gem types: Fire, Water, Earth, Air, Lightning, Ice, Healing, Strength, Iron, Sand")
+					}
+				}
+			}
+			
+			exceptionMessage?.let { 
+				messageBuilder.append("\nException message: `$it`")
+				
+				// Handle specific exception messages
+				if (it.contains("Index") && it.contains("out of bounds")) {
+					messageBuilder.append("\n\n**Common Cause:** This is likely caused by missing command arguments or empty lists.")
+					messageBuilder.append("\n**Solution:** Check that all required parameters are provided when using PowerGems commands.")
+				}
+			}
+			
+			powerGemsVersion?.let { messageBuilder.append("\nPowerGems version: `$it`") }
+			
+			if (hasStacktrace) {
+				messageBuilder.append("\n\nFull stack trace and debug information is included above.")
+			}
+			
+			log.addMessage(messageBuilder.toString())
 			log.hasProblems = true
 		}
 		
@@ -67,8 +112,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 			analyzeConfigurationDumps(log, configDumps)
 		}
 	}
-	
-	private fun analyzeConfigurationDumps(log: Log, configDumps: List<MatchResult>) {
+		private fun analyzeConfigurationDumps(log: Log, configDumps: List<MatchResult>) {
 		val configMap = mutableMapOf<String, MutableMap<String, String>>()
 		
 		// Parse all configuration dumps
@@ -81,54 +125,96 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 		}
 		
 		val issues = mutableListOf<String>()
-		
-		// Check for common configuration issues
-		configMap["GeneralConfigManager"]?.let { generalConfig ->
-			// Check debug mode
-			if (generalConfig["debugMode"] == "true") {
-				issues.add("Debug mode is enabled - this may impact performance")
-			}
-			
-			// Check if gems decay is disabled on level 1
-			if (generalConfig["doGemDecayOnLevel1"] == "false" && generalConfig["doGemDecay"] == "true") {
-				issues.add("Gem decay is enabled but disabled for level 1 gems")
-			}
-			
-			// Check max gem level
-			generalConfig["maxGemLevel"]?.let { maxLevel ->
-				if (maxLevel.toIntOrNull()?.let { it > 10 } == true) {
-					issues.add("Very high max gem level ($maxLevel) may cause balance issues")
-				}
-			}
-		}
-		
-		// Check for disabled gems
-		configMap["ActiveGemsConfigManager"]?.let { activeConfig ->
-			val disabledGems = activeConfig.filterValues { it == "false" }.keys
-			if (disabledGems.isNotEmpty()) {
-				issues.add("Some gems are disabled: ${disabledGems.joinToString(", ")}")
-			}
-		}
+		val insights = mutableListOf<String>()
 		
 		// Check cooldown configuration
 		configMap["CooldownConfigManager"]?.let { cooldownConfig ->
 			val cooldowns = cooldownConfig.values.mapNotNull { it.toIntOrNull() }
 			if (cooldowns.isNotEmpty()) {
 				val avgCooldown = cooldowns.average()
-				if (avgCooldown < 30) {
-					issues.add("Low cooldown times (avg: ${avgCooldown.toInt()}s) may cause spam")
-				} else if (avgCooldown > 300) {
-					issues.add("High cooldown times (avg: ${avgCooldown.toInt()}s) may frustrate players")
+				val minCooldown = cooldowns.minOrNull() ?: 0
+				val maxCooldown = cooldowns.maxOrNull() ?: 0
+				
+				if (minCooldown < 10) {
+					issues.add("Very low cooldown times detected (min: ${minCooldown}s) - may cause ability spam")
+				} else if (avgCooldown < 30) {
+					insights.add("Low average cooldown time (${avgCooldown.toInt()}s) - fast-paced gameplay")
+				} else if (avgCooldown > 180) {
+					insights.add("High average cooldown time (${avgCooldown.toInt()}s) - slower gameplay")
+				}
+				
+				if (maxCooldown > 300) {
+					insights.add("Some abilities have very high cooldowns (max: ${maxCooldown}s)")
 				}
 			}
 		}
 		
+		// Check gem color configuration
+		configMap["GemColorConfigManager"]?.let { colorConfig ->
+			val colors = colorConfig.values.toSet()
+			if (colors.size == 1) {
+				insights.add("All gems use the same color (${colors.first()}) - may be harder for players to distinguish")
+			}
+		}
+		
+		// Check gem material configuration  
+		configMap["GemMaterialConfigManager"]?.let { materialConfig ->
+			val materials = materialConfig.values.toSet()
+			if (materials.size == 1) {
+				insights.add("All gems use the same material (${materials.first()}) - consider using different materials for variety")
+			}
+		}
+		
+		// Check permanent effects
+		configMap["GemPermanentEffectConfigManager"]?.let { effectConfig ->
+			val effects = effectConfig.entries.associate { it.key.replace("GemEffect", "") to it.value }
+			val duplicateEffects = effects.values.groupBy { it }.filterValues { it.size > 1 }
+			
+			if (duplicateEffects.isNotEmpty()) {
+				duplicateEffects.forEach { (effect, _) ->
+					val gemsWithSameEffect = effects.filterValues { it == effect }.keys
+					insights.add("Multiple gems share the same permanent effect ($effect): ${gemsWithSameEffect.joinToString(", ")}")
+				}
+			}
+		}
+		
+		// Check gem level effects
+		configMap["GemPermanentEffectLevelConfigManager"]?.let { levelConfig ->
+			val levels = levelConfig.values.mapNotNull { it.toIntOrNull() }
+			if (levels.isNotEmpty()) {
+				val avgLevel = levels.average()
+				if (avgLevel < 1) {
+					issues.add("Some permanent effects have level 0 or negative - effects may not work properly")
+				} else if (avgLevel > 3) {
+					insights.add("High permanent effect levels (avg: ${avgLevel.toInt()}) - very powerful passive effects")
+				}
+			}
+		}
+		
+		// Look for specific error patterns in the dump
+		val gemManagerDumps = configDumps.filter { it.groupValues[1] == "GemManager" }
+		if (gemManagerDumps.isNotEmpty()) {
+			val gemIdLookup = gemManagerDumps.find { it.groupValues[2] == "gemIdLookup" }?.groupValues?.get(3)
+			if (gemIdLookup != null && gemIdLookup.contains("[]")) {
+				issues.add("Empty gem ID lookup - no gems may be registered properly")
+			}
+		}
+		
+		// Add messages based on analysis
 		if (issues.isNotEmpty()) {
 			log.addMessage(
-				"**PowerGems Configuration Analysis** \n" +
-					"Potential configuration issues detected:\n" +
-					issues.joinToString("\n") { "• $it" } +
-					"\n\n*This analysis is based on the debug dump. Review your PowerGems configuration if needed.*"
+				"**PowerGems Configuration Issues** \n" +
+					"⚠️ Potential problems detected:\n" +
+					issues.joinToString("\n") { "• $it" }
+			)
+		}
+		
+		if (insights.isNotEmpty()) {
+			log.addMessage(
+				"**PowerGems Configuration Insights** \n" +
+					"ℹ️ Configuration notes:\n" +
+					insights.joinToString("\n") { "• $it" } +
+					"\n\n*This analysis is based on the debug dump. These are observations, not necessarily problems.*"
 			)
 		}
 	}
