@@ -21,6 +21,9 @@ private val PATTERNS = listOf(
 	"--fml.mcVersion, ([^\\s,]+)".toRegex(RegexOption.IGNORE_CASE), // Forge
 	"--version, ([^,]+),".toRegex(RegexOption.IGNORE_CASE), // ATLauncher
 	" --version (\\S+) ".toRegex(RegexOption.IGNORE_CASE), // MMC, Prism, PolyMC
+
+	" for Minecraft (\\S+)+".toRegex(RegexOption.IGNORE_CASE), // Paper
+	": Starting minecraft server version (\\S+)+".toRegex(RegexOption.IGNORE_CASE) // CraftBukkit
 )
 
 public class MinecraftVersionParser : LogParser() {

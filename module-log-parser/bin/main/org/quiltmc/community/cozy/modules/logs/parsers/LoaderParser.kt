@@ -24,7 +24,7 @@ private val PATTERNS = linkedMapOf(
 	"""^\s*at\s+net\.minecraftforge\..*""".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Forge,
 	// Older versions
 	"MinecraftForge v([^\\s,]+) Initialized".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Forge,
-	
+
 	// Plugin platforms - improved patterns to capture server build versions
 	// More specific patterns first to avoid conflicts
 	"This server is running CraftBukkit version ([^\\s(]+).*Spigot".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Spigot,
@@ -40,6 +40,8 @@ private val PATTERNS = linkedMapOf(
 	"BungeeCord version ([^\\s]+) by SpigotMC".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Bungeecord,
 	"Starting Waterfall version ([^\\s]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Waterfall,
 	"Waterfall version ([^\\s]+) by PaperMC".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Waterfall,
+	""".*Waterfall has reached end of life and is no longer maintained.*""".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Waterfall,
+
 	// Fallback patterns for basic Minecraft server detection (will use Bukkit as default)
 	"Starting minecraft server version ([\\d\\.]+)".toRegex(RegexOption.IGNORE_CASE) to LoaderType.Bukkit,
 )
@@ -58,7 +60,7 @@ public class LoaderParser : LogParser() {
 			} else {
 				"Unknown"
 			}
-			
+
 			log.setLoaderVersion(loader, Version(version))
 
 			if (loader == LoaderType.Forge) {
@@ -69,6 +71,31 @@ public class LoaderParser : LogParser() {
 							"Thank you for understanding."
 
 					)
+			}
+
+			if (loader == LoaderType.Waterfall) {
+				log.abort(
+					"**It looks like you're using the Waterfall Loader.**\n\n" +
+					"As of March 2024, **Waterfall loader updates have ended** and the project has been archived. " +
+					"In the past years Waterfall didn't receive much love from their team their great contributor " +
+					"community. They have also seen less and less traffic in the support channels on their Discord." +
+					"\n\n Additionally, Mojang made huge investments into the core engine of the game which resulted " +
+					"in big and complicated changes to the inner workings of the game. While these changes are very " +
+					"welcome and Waterfall have been pushed them for some years, that also means that there was a " +
+					"bunch of work ahead of them for adapting their projects to these changes. Due to all of this, " +
+					"their forum and sub-pages now have big red banners indicating this project will no longer be " +
+					"updated.\n\n" +
+
+					"Whilst it is still safe and perfectly ok to use Waterfall, we will not provide any support for " +
+					"it. We would also like to recommend using the [Velocity](https://papermc.io/software/velocity) " +
+					"loader as it is what originally Waterfall was based off of.\n\n"+
+
+					"For more information on what happened, feel free to check out the following links:\n\n" +
+					"- [Thread by PaperMC](https://forums.papermc.io/threads/announcing-the-end-of-life-"+
+					"of-waterfall.1088/)\n\n" +
+
+					"- [The Waterfall website](https://papermc.io/software/waterfall)"
+				)
 			}
 
 			return

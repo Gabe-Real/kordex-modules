@@ -31,7 +31,8 @@ public class SeallibVersionProcessor : LogProcessor() {
 		) {
 			log.addMessage(
 				"**SealLib version mismatch detected:** " +
-					"Installed version is `$actualSealLibVersion`, but PowerGems requires `$requiredSealLibVersion`."
+					"Installed version is `$actualSealLibVersion`, but PowerGems requires `$requiredSealLibVersion`, " +
+					"you can install it [here](https://modrinth.com/plugin/seallib/version/$requiredSealLibVersion)"
 			)
 			log.hasProblems = true
 		}
