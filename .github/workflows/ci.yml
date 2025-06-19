@@ -41,13 +41,12 @@ jobs:
           if [[ "${{ github.event_name }}" == "push" ]]; then
             # For pushes, generate proper version numbers
             git fetch --tags
-            
-            if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+              if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
               # For master branch, use semantic versioning with auto-increment
               LATEST_TAG=$(git tag -l "v*.*.*" --sort=-version:refname | head -n1)
               if [[ -z "$LATEST_TAG" ]]; then
-                # No previous tags, start with v1.0.0
-                VERSION="1.0.0"
+                # No previous tags, start with v1.1.0
+                VERSION="1.1.0"
               else
                 # Extract version numbers and increment patch version
                 LATEST_TAG=${LATEST_TAG#v}  # Remove 'v' prefix
@@ -55,9 +54,15 @@ jobs:
                 MAJOR=${VERSION_PARTS[0]}
                 MINOR=${VERSION_PARTS[1]}
                 PATCH=${VERSION_PARTS[2]}
-                # Increment patch version
-                PATCH=$((PATCH + 1))
-                VERSION="${MAJOR}.${MINOR}.${PATCH}"
+                
+                # If we're still on 1.0.x, jump to 1.1.0
+                if [[ "$MAJOR" == "1" && "$MINOR" == "0" ]]; then
+                  VERSION="1.1.0"
+                else
+                  # Increment patch version normally
+                  PATCH=$((PATCH + 1))
+                  VERSION="${MAJOR}.${MINOR}.${PATCH}"
+                fi
               fi
             else
               # For other branches, use branch name with incremental number as version
@@ -146,13 +151,12 @@ jobs:
         run: |
           # Get the latest tag that matches our pattern
           git fetch --tags
-          
-          if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+            if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
             # For master branch, use semantic versioning with auto-increment
             LATEST_TAG=$(git tag -l "v*.*.*" --sort=-version:refname | head -n1)
             if [[ -z "$LATEST_TAG" ]]; then
-              # No previous tags, start with v1.0.0
-              NEW_TAG="v1.0.0"
+              # No previous tags, start with v1.1.0
+              NEW_TAG="v1.1.0"
             else
               # Extract version numbers and increment patch version
               LATEST_TAG=${LATEST_TAG#v}  # Remove 'v' prefix
@@ -160,9 +164,15 @@ jobs:
               MAJOR=${VERSION_PARTS[0]}
               MINOR=${VERSION_PARTS[1]}
               PATCH=${VERSION_PARTS[2]}
-              # Increment patch version
-              PATCH=$((PATCH + 1))
-              NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+              
+              # If we're still on 1.0.x, jump to 1.1.0
+              if [[ "$MAJOR" == "1" && "$MINOR" == "0" ]]; then
+                NEW_TAG="v1.1.0"
+              else
+                # Increment patch version normally
+                PATCH=$((PATCH + 1))
+                NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+              fi
             fi
           else
             # For other branches, use branch name with incremental number
