@@ -110,9 +110,9 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 		// Analyze configuration dumps for common issues
 		if (configDumps.isNotEmpty()) {
 			analyzeConfigurationDumps(log, configDumps)
-		}
-	}
-		private fun analyzeConfigurationDumps(log: Log, configDumps: List<MatchResult>) {
+		}	}
+	
+	private fun analyzeConfigurationDumps(log: Log, configDumps: List<MatchResult>) {
 		val configMap = mutableMapOf<String, MutableMap<String, String>>()
 		
 		// Parse all configuration dumps
@@ -125,68 +125,34 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 		}
 		
 		val issues = mutableListOf<String>()
-		val insights = mutableListOf<String>()
-		
-		// Check cooldown configuration
+				// Check cooldown configuration
 		configMap["CooldownConfigManager"]?.let { cooldownConfig ->
 			val cooldowns = cooldownConfig.values.mapNotNull { it.toIntOrNull() }
 			if (cooldowns.isNotEmpty()) {
-				val avgCooldown = cooldowns.average()
 				val minCooldown = cooldowns.minOrNull() ?: 0
-				val maxCooldown = cooldowns.maxOrNull() ?: 0
 				
-				if (minCooldown < 10) {
+				// Only flag extremely problematic cooldowns
+				if (minCooldown < 5) {
 					issues.add("Very low cooldown times detected (min: ${minCooldown}s) - may cause ability spam")
-				} else if (avgCooldown < 30) {
-					insights.add("Low average cooldown time (${avgCooldown.toInt()}s) - fast-paced gameplay")
-				} else if (avgCooldown > 180) {
-					insights.add("High average cooldown time (${avgCooldown.toInt()}s) - slower gameplay")
-				}
-				
-				if (maxCooldown > 300) {
-					insights.add("Some abilities have very high cooldowns (max: ${maxCooldown}s)")
 				}
 			}
 		}
-		
-		// Check gem color configuration
-		configMap["GemColorConfigManager"]?.let { colorConfig ->
-			val colors = colorConfig.values.toSet()
-			if (colors.size == 1) {
-				insights.add("All gems use the same color (${colors.first()}) - may be harder for players to distinguish")
-			}
-		}
+				// Check gem color configuration
+		// Note: PowerGems uses custom model data for gem distinction, so same base color is normal
 		
 		// Check gem material configuration  
-		configMap["GemMaterialConfigManager"]?.let { materialConfig ->
-			val materials = materialConfig.values.toSet()
-			if (materials.size == 1) {
-				insights.add("All gems use the same material (${materials.first()}) - consider using different materials for variety")
-			}
-		}
+		// Note: PowerGems uses custom model data for gem distinction, so same base material is normal
 		
 		// Check permanent effects
-		configMap["GemPermanentEffectConfigManager"]?.let { effectConfig ->
-			val effects = effectConfig.entries.associate { it.key.replace("GemEffect", "") to it.value }
-			val duplicateEffects = effects.values.groupBy { it }.filterValues { it.size > 1 }
-			
-			if (duplicateEffects.isNotEmpty()) {
-				duplicateEffects.forEach { (effect, _) ->
-					val gemsWithSameEffect = effects.filterValues { it == effect }.keys
-					insights.add("Multiple gems share the same permanent effect ($effect): ${gemsWithSameEffect.joinToString(", ")}")
-				}
-			}
-		}
-		
-		// Check gem level effects
+		// Note: Some gems logically share effects (e.g., Fire and Lava both having fire resistance)
+				// Check gem level effects
 		configMap["GemPermanentEffectLevelConfigManager"]?.let { levelConfig ->
 			val levels = levelConfig.values.mapNotNull { it.toIntOrNull() }
 			if (levels.isNotEmpty()) {
-				val avgLevel = levels.average()
-				if (avgLevel < 1) {
+				val minLevel = levels.minOrNull() ?: 0
+				// Only flag actually problematic effect levels
+				if (minLevel < 1) {
 					issues.add("Some permanent effects have level 0 or negative - effects may not work properly")
-				} else if (avgLevel > 3) {
-					insights.add("High permanent effect levels (avg: ${avgLevel.toInt()}) - very powerful passive effects")
 				}
 			}
 		}
@@ -198,23 +164,13 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 			if (gemIdLookup != null && gemIdLookup.contains("[]")) {
 				issues.add("Empty gem ID lookup - no gems may be registered properly")
 			}
-		}
-		
-		// Add messages based on analysis
+		}		
+		// Only show message if there are actual issues
 		if (issues.isNotEmpty()) {
 			log.addMessage(
 				"**PowerGems Configuration Issues** \n" +
 					"⚠️ Potential problems detected:\n" +
 					issues.joinToString("\n") { "• $it" }
-			)
-		}
-		
-		if (insights.isNotEmpty()) {
-			log.addMessage(
-				"**PowerGems Configuration Insights** \n" +
-					"ℹ️ Configuration notes:\n" +
-					insights.joinToString("\n") { "• $it" } +
-					"\n\n*This analysis is based on the debug dump. These are observations, not necessarily problems.*"
 			)
 		}
 	}
