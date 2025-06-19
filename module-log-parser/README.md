@@ -24,12 +24,18 @@ yourself.
 
 - **Fabric-specific:** Parsing the list of installed mods from the log file, along with the java version
 - **Quilt-specific:** Parsing the list of installed mods from the log file, along with their metadata and the java version
+- **Plugin platforms:** Parsing the list of installed plugins for Paper, Spigot, Bukkit, Velocity, BungeeCord, and Waterfall servers
 - **Launcher information:** Launcher name and version for ATLauncher, MultiMC, Prism, PolyMC, Technic and TLauncher
-- **Loader information:** Loader name and version for Fabric, Forge and Quilt
+- **Loader information:** Loader name and version for Fabric, Forge, Quilt, and plugin platforms (Paper, Spigot, etc.)
 - **Minecraft version**
 
 ### Log Processing
 
+- **Plugin platforms:**
+  - Detection for missing required plugins
+  - Detection for plugin loading errors and compatibility issues
+  - Detection for server version compatibility problems
+  - Detection for plugin version mismatches
 - **Quilt-specific:**
   - Detection for mods that make use of internal Fabric types
   - Detection for mods that are marked incompatible on [Quilt's forum](https://forum.quiltmc.org/t/mod-incompatibility-megathread/261)

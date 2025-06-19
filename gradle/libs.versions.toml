@@ -1,5 +1,4 @@
 [versions]
-detekt = "1.23.6"
 kotlin = "2.1.21"
 graphql = "7.1.4"
 
@@ -25,8 +24,6 @@ semver = "2.0.0"
 [libraries]
 autolink = { module = "org.nibor.autolink:autolink", version.ref = "autolink" }
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
-detekt-libraries = { module = "io.gitlab.arturbosch.detekt:detekt-rules-libraries", version.ref = "detekt" }
 excelkt = { module = "io.github.evanrupert:excelkt", version.ref = "excelkt" }
 flexver = { module = "com.unascribed:flexver-java", version.ref = "flexver" }
 graphql = { module = "com.expediagroup:graphql-kotlin-ktor-client", version.ref = "graphql" }
