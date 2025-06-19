@@ -28,12 +28,14 @@ public class ServerVersionCompatibilityProcessor : LogProcessor() {
 
 	override suspend fun predicate(log: Log, event: Event): Boolean =
 		// Only run on plugin server platforms
-		log.getLoaderVersion(LoaderType.Paper) != null ||
-		log.getLoaderVersion(LoaderType.Spigot) != null ||
-		log.getLoaderVersion(LoaderType.Bukkit) != null ||
-		log.getLoaderVersion(LoaderType.Velocity) != null ||
-		log.getLoaderVersion(LoaderType.Bungeecord) != null ||
-		log.getLoaderVersion(LoaderType.Waterfall) != null
+		listOf(
+			LoaderType.Paper,
+			LoaderType.Spigot,
+			LoaderType.Bukkit,
+			LoaderType.Velocity,
+			LoaderType.Bungeecord,
+			LoaderType.Waterfall
+		).any { loaderType -> log.getLoaderVersion(loaderType) != null }
 	override suspend fun process(log: Log) {
 		val compatibilityIssues = mutableListOf<String>()
 
