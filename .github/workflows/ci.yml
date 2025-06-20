@@ -32,6 +32,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-cleanup: always
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
@@ -87,13 +89,20 @@ jobs:
           
           # Update the version in build.gradle.kts
           sed -i "s/version = \".*\"/version = \"${VERSION}\"/" build.gradle.kts
-          
-          # Verify the change
+            # Verify the change
           echo "Updated version in build.gradle.kts:"
           grep "version =" build.gradle.kts
 
       - name: Gradle (Build)
         run: ./gradlew build --no-daemon
+
+      - name: Cleanup old Gradle caches
+        run: |
+          # Clean up old build cache entries (keep only recent ones)
+          find ~/.gradle/caches -name "*.lock" -mtime +7 -delete 2>/dev/null || true
+          find ~/.gradle/caches -type d -name "journal-*" -mtime +7 -exec rm -rf {} + 2>/dev/null || true
+          # Clean gradle daemon logs
+          find ~/.gradle/daemon -name "*.log" -mtime +3 -delete 2>/dev/null || true
 
       - name: Upload artifacts (Main JAR)
         uses: actions/upload-artifact@v4
