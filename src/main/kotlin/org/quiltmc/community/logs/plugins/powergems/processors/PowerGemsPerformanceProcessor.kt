@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package org.quiltmc.community.logs.plugins.powergems
+package org.quiltmc.community.logs.plugins.powergems.processors
 
 import org.quiltmc.community.cozy.modules.logs.data.Log
 import org.quiltmc.community.cozy.modules.logs.data.Order
@@ -66,10 +66,10 @@ public class PowerGemsPerformanceProcessor : LogProcessor() {
 			val avgMs = tickLag.groupValues[1].toIntOrNull() ?: 0
 			val severity = when {
 				avgMs > 50 -> "**SEVERE**"
-				avgMs > 20 -> "**HIGH**" 
+				avgMs > 20 -> "**HIGH**"
 				else -> "**MODERATE**"
 			}
-			
+
 			log.addMessage(
 				"**PowerGems Tick Lag Detected** \n" +
 					"$severity - Average gem processing time: ${avgMs}ms\n" +

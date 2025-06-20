@@ -17,7 +17,7 @@ private val POWERGEMS_REQUIRED_REGEX =
 	"""\[PowerGems] The plugin SealLib is using the wrong version! Please install version ([\d.\w\-]+)""".toRegex()
 
 public class SeallibVersionProcessor : LogProcessor() {
-	override val identifier: String = "plugin_version_mismatch"
+	override val identifier: String = "seallib_version_processor"
 	override val order: Order = Order.Earlier
 
 	override suspend fun process(log: Log) {

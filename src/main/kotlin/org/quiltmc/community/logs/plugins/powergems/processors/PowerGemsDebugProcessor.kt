@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package org.quiltmc.community.logs.plugins.powergems
+package org.quiltmc.community.logs.plugins.powergems.processors
 
 import org.quiltmc.community.cozy.modules.logs.data.Log
 import org.quiltmc.community.cozy.modules.logs.data.Order
@@ -92,7 +92,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 		val configDumps = POWERGEMS_CONFIG_DUMP_REGEX.findAll(log.content).toList()
 		val hasVersionRequirementMessage = POWERGEMS_VERSION_REQUIREMENT_REGEX.find(log.content) != null
 		val isPluginDisabled = POWERGEMS_PLUGIN_DISABLED_REGEX.find(log.content) != null
-		
+
 		// Check for additional error types
 		val dependencyError = POWERGEMS_DEPENDENCY_ERROR_REGEX.find(log.content)
 		val versionMismatch = POWERGEMS_VERSION_MISMATCH_REGEX.find(log.content)
@@ -103,7 +103,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 		val configError = POWERGEMS_CONFIG_ERROR_REGEX.find(log.content)
 		val commandMessage = POWERGEMS_COMMAND_MESSAGE_REGEX.find(log.content)
 		val updateError = POWERGEMS_UPDATE_ERROR_REGEX.find(log.content)
-		
+
 		// Handle fake debug exceptions
 		if (fakeException != null && errorMessage == "FAKE_EXCEPTION") {
 			log.addMessage(
@@ -117,17 +117,17 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 		if (debugException != null && fakeException == null) {
 			val exceptionClass = debugException.groupValues[1]
 			val messageBuilder = StringBuilder("**PowerGems Exception Detected** \n")
-			
+
 			// Only show version information if the log doesn't already contain version requirement messages
 			if (!hasVersionRequirementMessage) {
 				powerGemsVersion?.let { messageBuilder.append("PowerGems version: `$it`\n") }
 				sealLibVersion?.let { messageBuilder.append("SealLib version: `$it`\n") }
 			}
-			
+
 			messageBuilder.append("Exception in class: `$exceptionClass`")
-					errorMessage?.let { 
+					errorMessage?.let {
 				messageBuilder.append("\nError type: `$it`")
-				
+
 				// Provide specific help for common error types
 				when (it) {
 					"GIVE_GEM_COMMAND" -> {
@@ -165,26 +165,28 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 						messageBuilder.append("\n\n**Common Cause:** Failed to register a custom gem class from an addon.")
 						messageBuilder.append("\n**Solution:** Check addon compatibility and gem class implementation")
 					}
+
+					else -> {}
 				}
 			}
-			
-			exceptionMessage?.let { 
+
+			exceptionMessage?.let {
 				messageBuilder.append("\nException message: `$it`")
-				
+
 				// Handle specific exception messages
 				if (it.contains("Index") && it.contains("out of bounds")) {
 					messageBuilder.append("\n\n**Common Cause:** This is likely caused by missing command arguments or empty lists.")
 					messageBuilder.append("\n**Solution:** Check that all required parameters are provided when using PowerGems commands.")
 				}
 			}
-			
+
 			if (hasStacktrace) {
 				messageBuilder.append("\n\nFull stack trace and debug information is included above.")
 			}
-			
+
 			log.addMessage(messageBuilder.toString())
 			log.hasProblems = true		}
-		
+
 		// Handle plugin disabled scenarios - only add context if no other diagnostic info was provided
 		if (isPluginDisabled && debugException == null && hasVersionRequirementMessage) {
 			// The log already shows the version requirement message, so just add helpful next steps
@@ -197,7 +199,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 					"3. Check that both plugins are compatible with your Minecraft version"
 			)
 			log.hasProblems = true		}
-		
+
 		// Handle dependency errors (missing SealLib)
 		if (dependencyError != null) {
 			val dependencyName = dependencyError.groupValues[1]
@@ -214,7 +216,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 			)
 			log.hasProblems = true
 		}
-		
+
 		// Handle version mismatch errors
 		if (versionMismatch != null) {
 			val dependencyName = versionMismatch.groupValues[1]
@@ -231,7 +233,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 			)
 			log.hasProblems = true
 		}
-		
+
 		// Handle I18N/localization errors
 		if (i18nError != null) {
 			log.addMessage(
@@ -247,7 +249,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 			)
 			log.hasProblems = true
 		}
-		
+
 		// Handle WorldGuard integration errors
 		if (worldGuardError != null) {
 			log.addMessage(
@@ -264,8 +266,8 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 			)
 			log.hasProblems = true
 		}
-		
-		// Handle gem creation/validation errors  
+
+		// Handle gem creation/validation errors
 		if (gemCreationError != null) {
 			log.addMessage(
 				"**PowerGems Gem Validation Error** \n" +
@@ -281,7 +283,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 			)
 			log.hasProblems = true
 		}
-		
+
 		// Handle recipe/config errors
 		if (configError != null) {
 			log.addMessage(
@@ -297,7 +299,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 					"3. Ensure all materials in recipes exist"
 			)
 			log.hasProblems = true		}
-		
+
 		// Handle common command messages (informational)
 		if (commandMessage != null && debugException == null) {
 			val messageType = commandMessage.groupValues[1]
@@ -328,7 +330,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 				}
 			}
 		}
-		
+
 		// Handle update check messages (informational)
 		if (updateError != null && !log.content.contains("failed")) {
 			log.addMessage(
@@ -336,31 +338,31 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 					"PowerGems is checking for updates. This is normal if update checking is enabled in the config."
 			)
 		}
-		
+
 		// Analyze configuration dumps for common issues
 		if (configDumps.isNotEmpty()) {
 			analyzeConfigurationDumps(log, configDumps)
 		}	}
-	
+
 	private fun analyzeConfigurationDumps(log: Log, configDumps: List<MatchResult>) {
 		val configMap = mutableMapOf<String, MutableMap<String, String>>()
-		
+
 		// Parse all configuration dumps
 		configDumps.forEach { match ->
 			val manager = match.groupValues[1]
-			val key = match.groupValues[2] 
+			val key = match.groupValues[2]
 			val value = match.groupValues[3]
-			
+
 			configMap.computeIfAbsent(manager) { mutableMapOf() }[key] = value
 		}
-		
+
 		val issues = mutableListOf<String>()
 				// Check cooldown configuration
 		configMap["CooldownConfigManager"]?.let { cooldownConfig ->
 			val cooldowns = cooldownConfig.values.mapNotNull { it.toIntOrNull() }
 			if (cooldowns.isNotEmpty()) {
 				val minCooldown = cooldowns.minOrNull() ?: 0
-				
+
 				// Only flag extremely problematic cooldowns
 				if (minCooldown < 5) {
 					issues.add("Very low cooldown times detected (min: ${minCooldown}s) - may cause ability spam")
@@ -369,10 +371,10 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 		}
 				// Check gem color configuration
 		// Note: PowerGems uses custom model data for gem distinction, so same base color is normal
-		
-		// Check gem material configuration  
+
+		// Check gem material configuration
 		// Note: PowerGems uses custom model data for gem distinction, so same base material is normal
-		
+
 		// Check permanent effects
 		// Note: Some gems logically share effects (e.g., Fire and Lava both having fire resistance)
 				// Check gem level effects
@@ -386,7 +388,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 				}
 			}
 		}
-		
+
 		// Look for specific error patterns in the dump
 		val gemManagerDumps = configDumps.filter { it.groupValues[1] == "GemManager" }
 		if (gemManagerDumps.isNotEmpty()) {
@@ -394,7 +396,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 			if (gemIdLookup != null && gemIdLookup.contains("[]")) {
 				issues.add("Empty gem ID lookup - no gems may be registered properly")
 			}
-		}		
+		}
 		// Only show message if there are actual issues
 		if (issues.isNotEmpty()) {
 			log.addMessage(

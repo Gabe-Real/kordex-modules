@@ -28,12 +28,8 @@ import org.quiltmc.community.logs.*
 import org.quiltmc.community.logs.plugins.MissingPluginProcessor
 import org.quiltmc.community.logs.plugins.PluginErrorProcessor
 import org.quiltmc.community.logs.plugins.ServerVersionCompatibilityProcessor
-import org.quiltmc.community.logs.plugins.powergems.MissingSeallibProcessor
-import org.quiltmc.community.logs.plugins.powergems.PowerGemsDebugProcessor
-import org.quiltmc.community.logs.plugins.powergems.PowerGemsErrorProcessor
-import org.quiltmc.community.logs.plugins.powergems.PowerGemsPerformanceProcessor
-import org.quiltmc.community.logs.plugins.powergems.PowerGemsPlayerProcessor
 import org.quiltmc.community.logs.plugins.powergems.SeallibVersionProcessor
+import org.quiltmc.community.logs.plugins.powergems.processors.*
 
 val MODE = envOrNull("MODE")?.lowercase() ?: "quilt"
 val ENVIRONMENT = envOrNull("ENVIRONMENT")?.lowercase() ?: "production"
@@ -131,10 +127,14 @@ suspend fun setupQuilt() = ExtensibleBot(DISCORD_TOKEN) {
 			processor(FabricMissingProcessor())
 			processor(MissingApiProcessor())
 			processor(ServerWatchdogProcessor())
-			processor(MissingModsTomlProcessor())			// Plugin processors
+			processor(MissingModsTomlProcessor())
+			// Plugin processors
 			processor(MissingPluginProcessor())
 			processor(PluginErrorProcessor())
 			processor(ServerVersionCompatibilityProcessor())
+
+			// Specific plugin processors:
+			// # PowerGems
 			processor(SeallibVersionProcessor())
 			processor(MissingSeallibProcessor())
 			processor(PowerGemsDebugProcessor())
