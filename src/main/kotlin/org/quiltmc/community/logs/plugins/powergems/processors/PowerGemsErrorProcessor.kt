@@ -14,7 +14,10 @@ private val POWERGEMS_CONFIG_ERROR_REGEX =
 	"""\[PowerGems] (?:WARN|ERROR|SEVERE): (.+)""".toRegex()
 
 private val POWERGEMS_PLUGIN_DISABLE_REGEX =
-	"""\[PowerGems] Disabling PowerGems (.+)""".toRegex()
+	"""Disabling PowerGems v([0-9.]+(?:-[A-Z0-9]+)?)""".toRegex()
+
+private val SEALLIB_VERSION_REGEX =
+	"""SealLib \(([0-9.]+(?:-[A-Z0-9]+)?)\)|Enabling SealLib v([0-9.]+(?:-[A-Z0-9]+)?)""".toRegex()
 
 private val POWERGEMS_DEPENDENCY_ERROR_REGEX =
 	"""\[PowerGems] (.+) dependency not found""".toRegex()
@@ -37,21 +40,21 @@ private val POWERGEMS_PERMISSION_ERROR_REGEX =
 public class PowerGemsErrorProcessor : LogProcessor() {
 	override val identifier: String = "powergems_error_processor"
 	override val order: Order = Order.Earlier
-
 	override suspend fun process(log: Log) {
 		// Check for plugin disable
 		val pluginDisable = POWERGEMS_PLUGIN_DISABLE_REGEX.find(log.content)
 		if (pluginDisable != null) {
-			val version = pluginDisable.groupValues[1]
-			log.addMessage(
-				"**PowerGems Plugin Disabled** \n" +
-					"PowerGems $version has been disabled. Check the logs above for the cause. " +
-					"Common causes include:\n" +
-					"• Missing SealLib dependency\n" +
-					"• Configuration errors\n" +
-					"• Database connection issues\n" +
-					"• Incompatible server version"
-			)
+			val disabledVersion = pluginDisable.groupValues[1]
+			val sealLibVersionMatch = SEALLIB_VERSION_REGEX.find(log.content)
+			val sealLibVersion = sealLibVersionMatch?.groupValues?.get(1)?.takeIf { it.isNotEmpty() }
+				?: sealLibVersionMatch?.groupValues?.get(2)?.takeIf { it.isNotEmpty() }
+			
+			val messageBuilder = StringBuilder("**PowerGems Plugin Disabled** \n")
+			messageBuilder.append("PowerGems version: `$disabledVersion`\n")
+			sealLibVersion?.let { messageBuilder.append("SealLib version: `$it`\n") }
+			messageBuilder.append("\nPowerGems seems to be disabled. Check above for exceptions.")
+			
+			log.addMessage(messageBuilder.toString())
 			log.hasProblems = true
 			return
 		}
