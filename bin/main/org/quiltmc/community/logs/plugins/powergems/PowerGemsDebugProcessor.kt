@@ -245,23 +245,8 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 			)
 			log.hasProblems = true
 		}
-		
-		// Handle WorldGuard integration errors
-		if (worldGuardError != null) {
-			log.addMessage(
-				"**PowerGems WorldGuard Integration Error** \n" +
-					"Failed to register PowerGems flags with WorldGuard.\n\n" +
-					"**Possible Causes:**\n" +
-					"• Incompatible WorldGuard version\n" +
-					"• WorldGuard loaded after PowerGems\n" +
-					"• Flag conflicts with other plugins\n\n" +
-					"**Solution:**\n" +
-					"1. Ensure you have a compatible WorldGuard version\n" +
-					"2. Check plugin load order\n" +
-					"3. Disable WorldGuard support in PowerGems config if not needed"
-			)
-			log.hasProblems = true
-		}
+				// Handle WorldGuard integration errors - only show if there's an actual exception
+		// Note: WorldGuard is optional, so only flag real errors, not missing dependency
 		
 		// Handle gem creation/validation errors  
 		if (gemCreationError != null) {
@@ -279,22 +264,8 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 			)
 			log.hasProblems = true
 		}
-		
-		// Handle recipe/config errors
-		if (configError != null) {
-			log.addMessage(
-				"**PowerGems Configuration Error** \n" +
-					"Missing or invalid recipe configuration detected.\n\n" +
-					"**Common Issues:**\n" +
-					"• Missing recipe ingredients\n" +
-					"• Invalid recipe shape patterns\n" +
-					"• Corrupted recipes.yml file\n\n" +
-					"**Solution:**\n" +
-					"1. Delete recipes.yml to regenerate defaults\n" +
-					"2. Check recipes.yml for syntax errors\n" +
-					"3. Ensure all materials in recipes exist"
-			)
-			log.hasProblems = true		}
+				// Handle recipe/config errors - only show if there's an actual exception
+		// Note: Recipe error patterns are handled in the main exception processing above
 		
 		// Handle common command messages (informational)
 		if (commandMessage != null && debugException == null) {
