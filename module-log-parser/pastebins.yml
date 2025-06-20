@@ -9,6 +9,9 @@ url-transform:
   - match: 'mclo\.gs/([^/?#]*)'
     output: 'https://api.mclo.gs/1/raw/$1'
 
+  - match: 'gnomebot\.dev/paste/mclogs/([^/?#]*)'
+    output: 'https://api.mclo.gs/1/raw/$1'
+
   - match: 'paste\.ee/[pd]/([^/?#]*)'
     output: 'https://paste.ee/d/$1'
 

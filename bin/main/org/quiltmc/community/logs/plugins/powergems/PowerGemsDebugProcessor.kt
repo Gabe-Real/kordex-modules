@@ -57,7 +57,7 @@ private val POWERGEMS_VERSION_MISMATCH_REGEX =
 	"""The plugin ([A-Za-z]+) is using the wrong version! Please install version ([0-9.]+)""".toRegex()
 
 private val POWERGEMS_RECIPE_ERROR_REGEX =
-	"""\[PowerGems] (.+)""".toRegex()
+	"""\[PowerGems] (RECIPE_REGISTER_CRAFT|RECIPE_REGISTER_UPGRADE)""".toRegex()
 
 private val POWERGEMS_I18N_ERROR_REGEX =
 	"""Failed to set bundle|FAILED_SET_BUNDLE""".toRegex()
@@ -145,8 +145,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 					"RECIPE_REGISTER_CRAFT", "RECIPE_REGISTER_UPGRADE" -> {
 						messageBuilder.append("\n\n**Common Cause:** Recipe registration failed due to invalid ingredients or malformed recipe config.")
 						messageBuilder.append("\n**Solution:** Check recipes.yml for syntax errors or delete it to regenerate defaults")
-					}
-					"FAILED_SET_BUNDLE" -> {
+					}					"FAILED_SET_BUNDLE", "FAIL_SET_BUNDLE" -> {
 						messageBuilder.append("\n\n**Common Cause:** Localization bundle failed to load.")
 						messageBuilder.append("\n**Solution:** Check language/country codes in config or reinstall PowerGems")
 					}
@@ -231,8 +230,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 			)
 			log.hasProblems = true
 		}
-		
-		// Handle I18N/localization errors
+				// Handle I18N/localization errors
 		if (i18nError != null) {
 			log.addMessage(
 				"**PowerGems Localization Error** \n" +
@@ -328,13 +326,26 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 				}
 			}
 		}
-		
-		// Handle update check messages (informational)
+				// Handle update check messages (informational)
 		if (updateError != null && !log.content.contains("failed")) {
 			log.addMessage(
 				"**PowerGems Update Check** \n" +
 					"PowerGems is checking for updates. This is normal if update checking is enabled in the config."
 			)
+		} else if (updateError != null) {
+			log.addMessage(
+				"**PowerGems Update Check Failed** \n" +
+					"Update check failed. This won't affect plugin functionality but you may not be notified of new versions.\n\n" +
+					"**Possible Causes:**\n" +
+					"• Network connectivity issues\n" +
+					"• Update server temporarily unavailable\n" +
+					"• Firewall blocking update checks\n\n" +
+					"**Solution:**\n" +
+					"1. Check your internet connection\n" +
+					"2. Disable update checking in config if not needed\n" +
+					"3. Manually check for updates on the plugin page"
+			)
+			log.hasProblems = true
 		}
 		
 		// Analyze configuration dumps for common issues
