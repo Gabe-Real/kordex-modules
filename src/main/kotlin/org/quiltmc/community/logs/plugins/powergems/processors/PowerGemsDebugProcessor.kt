@@ -133,7 +133,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 					"GIVE_GEM_COMMAND" -> {
 						messageBuilder.append("\n\n**Common Cause:** This often happens when using the `/givegem` command without proper arguments.")
 						messageBuilder.append("\n**Solution:** Use the command like `/givegem <player> <gemtype> [level]`")
-						messageBuilder.append("\nExample: `/givegem Steve fire 3`")
+						messageBuilder.append("\nExample: `/givegem Fire 3 Steve`")
 					}
 					"INVALID_GEM_TYPE" -> {
 						messageBuilder.append("\n\n**Common Cause:** Invalid gem type specified.")
