@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package org.quiltmc.community.logs.plugins.powergems
+package org.quiltmc.community.logs.plugins.powergems.processors
 
 import org.quiltmc.community.cozy.modules.logs.data.Log
 import org.quiltmc.community.cozy.modules.logs.data.Order
@@ -155,7 +155,7 @@ public class PowerGemsErrorProcessor : LogProcessor() {
 					"$errorMessage\n" +
 					"Check the PowerGems documentation or configuration for more details."
 			)
-			
+
 			// Only mark as problem for errors, not warnings
 			if (!errorMessage.contains("warn", ignoreCase = true)) {
 				log.hasProblems = true

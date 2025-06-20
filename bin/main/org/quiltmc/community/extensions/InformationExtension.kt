@@ -43,7 +43,7 @@ class InformationExtension : Extension() {
 		"Take LunarcatOwO for example, without him I would not be able to host this bot or have half of the features " +
 		"it has right now. Here are a few more amazing people with the roles they played" +
 		"\n\n- **Gabe_Real** | Lead developer and owner." +
-		"\n- **LunarcatOwO** | Dockerfile specialist and bug hunter." +
+		"\n- **LunarcatOwO** | Dockerfile specialist, plugin enthusiast and developer." +
 		"\n- **Gdude2002 + The quilt community** | Original bot design and developer of the libraries used, also " +
 		"helped me a lot to learn kotlin." +
 		"\n- **UpcraftLP** | Inspiration from the rattiest gangs Rtuuy bot." +

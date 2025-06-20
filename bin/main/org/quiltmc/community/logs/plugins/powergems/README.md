@@ -13,7 +13,7 @@ Handles PowerGems debug output and configuration dumps.
 - Provides recommendations for common configuration issues
 - Checks for debug mode, gem decay settings, cooldown configurations, and disabled gems
 
-### PowerGemsErrorProcessor  
+### PowerGemsErrorProcessor
 Processes PowerGems error messages and warnings.
 
 **Features:**
@@ -65,7 +65,7 @@ Each processor uses regex patterns to match specific log patterns from PowerGems
 
 ## Integration
 
-These processors are automatically registered in the main bot application and will process any logs that contain PowerGems-related messages, providing helpful feedback to server administrators trying to troubleshoot issues.
+These processors are automatically registered in the main bot application and will process any logs that contain PowerGems-related messages, providing helpful feedback to members trying to troubleshoot issues.
 
 ## Supported Log Patterns
 

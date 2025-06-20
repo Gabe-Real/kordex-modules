@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package org.quiltmc.community.logs.plugins.powergems
+package org.quiltmc.community.logs.plugins.powergems.processors
 
 import org.quiltmc.community.cozy.modules.logs.data.Log
 import org.quiltmc.community.cozy.modules.logs.data.Order
