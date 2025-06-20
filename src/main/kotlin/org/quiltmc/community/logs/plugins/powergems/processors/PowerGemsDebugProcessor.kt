@@ -186,19 +186,8 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 
 			log.addMessage(messageBuilder.toString())
 			log.hasProblems = true		}
-
-		// Handle plugin disabled scenarios - only add context if no other diagnostic info was provided
-		if (isPluginDisabled && debugException == null && hasVersionRequirementMessage) {
-			// The log already shows the version requirement message, so just add helpful next steps
-			log.addMessage(
-				"**PowerGems Troubleshooting** \n" +
-					"PowerGems has been disabled due to a dependency issue. " +
-					"To resolve this:\n" +
-					"1. Update SealLib to the required version shown above\n" +
-					"2. Restart your server\n" +
-					"3. Check that both plugins are compatible with your Minecraft version"
-			)
-			log.hasProblems = true		}
+		// Handle plugin disabled scenarios - removed as this is normal behavior
+		// Note: Plugin disable messages are handled in the main exception processing above
 
 		// Handle dependency errors (missing SealLib)
 		if (dependencyError != null) {
