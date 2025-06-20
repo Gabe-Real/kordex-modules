@@ -117,19 +117,31 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 					"If you're experiencing actual issues, please run the debug command to help identify the problem."
 			)
 			return // Don't mark as problem since this is intentional
-		}
-		// Handle plugin disabled scenarios
+		}		// Handle plugin disabled scenarios
 		if (pluginDisabled != null) {
 			val disabledVersion = pluginDisabled.groupValues[1]
-			val messageBuilder = StringBuilder("**PowerGems Plugin Disabled** \n")
+			val disableIndex = pluginDisabled.range.first			// Check if this is during server shutdown by looking ONLY backwards from the disable message
+			// Look for explicit shutdown indicators within 1000 characters BEFORE the disable message
+			val contextStart = maxOf(0, disableIndex - 1000)
+			val contextualContent = log.content.substring(contextStart, disableIndex)
 			
-			messageBuilder.append("PowerGems version: `$disabledVersion`\n")
-			sealLibVersion?.let { messageBuilder.append("SealLib version: `$it`\n") }
+			// Only consider it a shutdown if we see explicit shutdown messages BEFORE the disable
+			// This prevents false positives when errors occur and then user stops server
+			val isServerShutdown = contextualContent.contains("Stopping server", ignoreCase = true) || 
+									contextualContent.contains("Server shutdown", ignoreCase = true) ||
+									contextualContent.contains("/stop", ignoreCase = true)
 			
-			messageBuilder.append("\nPowerGems seems to be disabled. Check for exceptions.")
-			
-			log.addMessage(messageBuilder.toString())
-			log.hasProblems = true
+			if (!isServerShutdown) {
+				// Only show message if it's NOT during normal server shutdown
+				val messageBuilder = StringBuilder("**PowerGems Plugin Disabled** \n")
+				messageBuilder.append("PowerGems version: `$disabledVersion`\n")
+				sealLibVersion?.let { messageBuilder.append("SealLib version: `$it`\n") }
+				messageBuilder.append("\nPowerGems seems to be disabled. Check above for exceptions.")
+				
+				log.addMessage(messageBuilder.toString())
+				log.hasProblems = true
+			}
+			// If it's during server shutdown, don't show any message - this is normal behavior
 		}
 
 		// Handle real PowerGems exceptions
