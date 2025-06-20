@@ -49,10 +49,38 @@ private val POWERGEMS_VERSION_REQUIREMENT_REGEX =
 private val POWERGEMS_PLUGIN_DISABLED_REGEX =
 	"""PowerGems Plugin Disabled""".toRegex()
 
+// Additional error patterns based on source code analysis
+private val POWERGEMS_DEPENDENCY_ERROR_REGEX =
+	"""The plugin ([A-Za-z]+) \(version ([0-9.]+)\) is required for this plugin to work""".toRegex()
+
+private val POWERGEMS_VERSION_MISMATCH_REGEX =
+	"""The plugin ([A-Za-z]+) is using the wrong version! Please install version ([0-9.]+)""".toRegex()
+
+private val POWERGEMS_RECIPE_ERROR_REGEX =
+	"""\[PowerGems] (.+)""".toRegex()
+
+private val POWERGEMS_I18N_ERROR_REGEX =
+	"""Failed to set bundle|FAILED_SET_BUNDLE""".toRegex()
+
+private val POWERGEMS_WORLDGUARD_ERROR_REGEX =
+	"""ATTEMPT_REGISTER_WG_FLAG_FAILED|FLAG_REGISTERING_FAILED""".toRegex()
+
+private val POWERGEMS_GEM_CREATION_ERROR_REGEX =
+	"""Invalid gem (name|ID)|Invalid gem name in gemMaterials\.yml""".toRegex()
+
+private val POWERGEMS_CONFIG_ERROR_REGEX =
+	"""CRAFT_INGREDIENTS_NOT_FOUND|SHAPE_NOT_FOUND_KEY|INGREDIENTS_NOT_FOUND_KEY""".toRegex()
+
+private val POWERGEMS_COMMAND_MESSAGE_REGEX =
+	"""(GEM_DISABLED|NO_PERMISSION|NOT_PLAYER|INVALID_SUBCOMMAND|ON_COOLDOWN_GEMS|CANNOT_MOVE_GEMS|INVENTORY_FULL)""".toRegex()
+
+private val POWERGEMS_UPDATE_ERROR_REGEX =
+	"""UPDATE_CHECK_(STARTED|COMPLETED)|Update test failed""".toRegex()
+
 public class PowerGemsDebugProcessor : LogProcessor() {
 	override val identifier: String = "powergems_debug_processor"
 	override val order: Order = Order.Earlier
-		override suspend fun process(log: Log) {
+	override suspend fun process(log: Log) {
 		val debugException = POWERGEMS_DEBUG_EXCEPTION_REGEX.find(log.content)
 		val fakeException = POWERGEMS_FAKE_EXCEPTION_REGEX.find(log.content)
 		val errorMessage = POWERGEMS_SEALUTILS_ERROR_REGEX.find(log.content)?.groupValues?.get(1)
@@ -64,6 +92,17 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 		val configDumps = POWERGEMS_CONFIG_DUMP_REGEX.findAll(log.content).toList()
 		val hasVersionRequirementMessage = POWERGEMS_VERSION_REQUIREMENT_REGEX.find(log.content) != null
 		val isPluginDisabled = POWERGEMS_PLUGIN_DISABLED_REGEX.find(log.content) != null
+		
+		// Check for additional error types
+		val dependencyError = POWERGEMS_DEPENDENCY_ERROR_REGEX.find(log.content)
+		val versionMismatch = POWERGEMS_VERSION_MISMATCH_REGEX.find(log.content)
+		val recipeError = POWERGEMS_RECIPE_ERROR_REGEX.find(log.content)
+		val i18nError = POWERGEMS_I18N_ERROR_REGEX.find(log.content)
+		val worldGuardError = POWERGEMS_WORLDGUARD_ERROR_REGEX.find(log.content)
+		val gemCreationError = POWERGEMS_GEM_CREATION_ERROR_REGEX.find(log.content)
+		val configError = POWERGEMS_CONFIG_ERROR_REGEX.find(log.content)
+		val commandMessage = POWERGEMS_COMMAND_MESSAGE_REGEX.find(log.content)
+		val updateError = POWERGEMS_UPDATE_ERROR_REGEX.find(log.content)
 		
 		// Handle fake debug exceptions
 		if (fakeException != null && errorMessage == "FAKE_EXCEPTION") {
@@ -86,8 +125,7 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 			}
 			
 			messageBuilder.append("Exception in class: `$exceptionClass`")
-			
-			errorMessage?.let { 
+					errorMessage?.let { 
 				messageBuilder.append("\nError type: `$it`")
 				
 				// Provide specific help for common error types
@@ -100,6 +138,32 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 					"INVALID_GEM_TYPE" -> {
 						messageBuilder.append("\n\n**Common Cause:** Invalid gem type specified.")
 						messageBuilder.append("\n**Solution:** Use valid gem types: Fire, Water, Earth, Air, Lightning, Ice, Healing, Strength, Iron, Sand")
+					}
+					"FAKE_EXCEPTION" -> {
+						messageBuilder.append("\n\n**Note:** This is a debug command, not a real error.")
+					}
+					"RECIPE_REGISTER_CRAFT", "RECIPE_REGISTER_UPGRADE" -> {
+						messageBuilder.append("\n\n**Common Cause:** Recipe registration failed due to invalid ingredients or malformed recipe config.")
+						messageBuilder.append("\n**Solution:** Check recipes.yml for syntax errors or delete it to regenerate defaults")
+					}
+					"FAILED_SET_BUNDLE" -> {
+						messageBuilder.append("\n\n**Common Cause:** Localization bundle failed to load.")
+						messageBuilder.append("\n**Solution:** Check language/country codes in config or reinstall PowerGems")
+					}
+					"FLAG_REGISTERING_FAILED" -> {
+						messageBuilder.append("\n\n**Common Cause:** WorldGuard flag registration failed.")
+						messageBuilder.append("\n**Solution:** Check WorldGuard compatibility or disable WorldGuard support")
+					}
+					"DUMPING_CLASSES" -> {
+						messageBuilder.append("\n\n**Note:** This is a debug dump command, showing all class information.")
+					}
+					"CREATE_DEFAULT_EFFECT_SETTINGS", "CREATE_DEFAULT_LEVEL_SETTINGS" -> {
+						messageBuilder.append("\n\n**Common Cause:** Invalid gem ID during configuration setup.")
+						messageBuilder.append("\n**Solution:** This usually indicates a plugin bug or corrupted installation")
+					}
+					"FAIL_REGISTER_GEM_CLASS" -> {
+						messageBuilder.append("\n\n**Common Cause:** Failed to register a custom gem class from an addon.")
+						messageBuilder.append("\n**Solution:** Check addon compatibility and gem class implementation")
 					}
 				}
 			}
@@ -132,7 +196,145 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 					"2. Restart your server\n" +
 					"3. Check that both plugins are compatible with your Minecraft version"
 			)
+			log.hasProblems = true		}
+		
+		// Handle dependency errors (missing SealLib)
+		if (dependencyError != null) {
+			val dependencyName = dependencyError.groupValues[1]
+			val requiredVersion = dependencyError.groupValues[2]
+			log.addMessage(
+				"**PowerGems Dependency Error** \n" +
+					"Missing required dependency: `$dependencyName`\n" +
+					"Required version: `$requiredVersion`\n\n" +
+					"**Solution:**\n" +
+					"1. Download $dependencyName version $requiredVersion\n" +
+					"2. Install it in your plugins folder\n" +
+					"3. Restart your server\n\n" +
+					"PowerGems will not work without this dependency."
+			)
 			log.hasProblems = true
+		}
+		
+		// Handle version mismatch errors
+		if (versionMismatch != null) {
+			val dependencyName = versionMismatch.groupValues[1]
+			val requiredVersion = versionMismatch.groupValues[2]
+			log.addMessage(
+				"**PowerGems Version Mismatch** \n" +
+					"Incorrect $dependencyName version detected!\n" +
+					"Required version: `$requiredVersion`\n\n" +
+					"**Solution:**\n" +
+					"1. Remove the current $dependencyName plugin\n" +
+					"2. Download $dependencyName version $requiredVersion\n" +
+					"3. Install the correct version\n" +
+					"4. Restart your server"
+			)
+			log.hasProblems = true
+		}
+		
+		// Handle I18N/localization errors
+		if (i18nError != null) {
+			log.addMessage(
+				"**PowerGems Localization Error** \n" +
+					"Failed to load language bundle. This can cause missing translations.\n\n" +
+					"**Common Causes:**\n" +
+					"• Corrupted PowerGems installation\n" +
+					"• Invalid language/country code in config\n" +
+					"• Missing language files\n\n" +
+					"**Solution:**\n" +
+					"1. Check your config for valid language codes (e.g., 'en_US')\n" +
+					"2. Re-download PowerGems if the problem persists"
+			)
+			log.hasProblems = true
+		}
+		
+		// Handle WorldGuard integration errors
+		if (worldGuardError != null) {
+			log.addMessage(
+				"**PowerGems WorldGuard Integration Error** \n" +
+					"Failed to register PowerGems flags with WorldGuard.\n\n" +
+					"**Possible Causes:**\n" +
+					"• Incompatible WorldGuard version\n" +
+					"• WorldGuard loaded after PowerGems\n" +
+					"• Flag conflicts with other plugins\n\n" +
+					"**Solution:**\n" +
+					"1. Ensure you have a compatible WorldGuard version\n" +
+					"2. Check plugin load order\n" +
+					"3. Disable WorldGuard support in PowerGems config if not needed"
+			)
+			log.hasProblems = true
+		}
+		
+		// Handle gem creation/validation errors  
+		if (gemCreationError != null) {
+			log.addMessage(
+				"**PowerGems Gem Validation Error** \n" +
+					"Invalid gem name or ID detected in configuration.\n\n" +
+					"**Common Causes:**\n" +
+					"• Typos in gem names in config files\n" +
+					"• Invalid gem IDs in commands\n" +
+					"• Custom gem names from addons\n\n" +
+					"**Solution:**\n" +
+					"1. Check your gemMaterials.yml for typos\n" +
+					"2. Use valid gem names: Fire, Water, Earth, Air, Lightning, Ice, Healing, Strength, Iron, Sand\n" +
+					"3. For addon gems, ensure proper configuration"
+			)
+			log.hasProblems = true
+		}
+		
+		// Handle recipe/config errors
+		if (configError != null) {
+			log.addMessage(
+				"**PowerGems Configuration Error** \n" +
+					"Missing or invalid recipe configuration detected.\n\n" +
+					"**Common Issues:**\n" +
+					"• Missing recipe ingredients\n" +
+					"• Invalid recipe shape patterns\n" +
+					"• Corrupted recipes.yml file\n\n" +
+					"**Solution:**\n" +
+					"1. Delete recipes.yml to regenerate defaults\n" +
+					"2. Check recipes.yml for syntax errors\n" +
+					"3. Ensure all materials in recipes exist"
+			)
+			log.hasProblems = true		}
+		
+		// Handle common command messages (informational)
+		if (commandMessage != null && debugException == null) {
+			val messageType = commandMessage.groupValues[1]
+			when (messageType) {
+				"GEM_DISABLED" -> {
+					log.addMessage(
+						"**PowerGems Usage Info** \n" +
+							"A player tried to use a disabled gem. This is normal if you've disabled certain gems in the ActiveGems configuration."
+					)
+				}
+				"ON_COOLDOWN_GEMS" -> {
+					log.addMessage(
+						"**PowerGems Usage Info** \n" +
+							"A player tried to use a gem while on cooldown. This is normal gameplay behavior."
+					)
+				}
+				"CANNOT_MOVE_GEMS", "CANNOT_PLACE_GEMS_IN_CONTAINERS" -> {
+					log.addMessage(
+						"**PowerGems Protection Info** \n" +
+							"Gem movement restrictions are working as intended. Check `allowMovingGems` in config if you want to change this behavior."
+					)
+				}
+				"INVENTORY_FULL" -> {
+					log.addMessage(
+						"**PowerGems Command Info** \n" +
+							"A command failed because the target player's inventory was full. This is normal behavior."
+					)
+				}
+			}
+		}
+		
+		// Handle update check messages (informational)
+		if (updateError != null && !log.content.contains("failed")) {
+			log.addMessage(
+				"**PowerGems Update Check** \n" +
+					"PowerGems is checking for updates. This is normal if update checking is enabled in the config."
+			)
 		}
 		
 		// Analyze configuration dumps for common issues
