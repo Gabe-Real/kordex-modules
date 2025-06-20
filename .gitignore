@@ -108,6 +108,9 @@ fabric.properties
 # Gradle build output folder
 build/
 
+# Compiled output folder
+bin/
+
 # Linkie mappings cacbe
 .linkie-cache
 
