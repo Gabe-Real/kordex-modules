@@ -13,11 +13,13 @@ import dev.kord.core.entity.Message
 import dev.kord.core.event.Event
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import dev.kord.rest.builder.message.embed
+import dev.kord.rest.builder.message.actionRow
 import dev.kordex.core.DISCORD_GREEN
 import dev.kordex.core.DISCORD_RED
 import dev.kordex.core.DISCORD_YELLOW
 import dev.kordex.core.components.components
 import dev.kordex.core.components.publicButton
+import dev.kordex.core.components.linkButton
 import dev.kordex.core.extensions.Extension
 import dev.kordex.core.extensions.ephemeralSlashCommand
 import dev.kordex.core.i18n.toKey
@@ -125,34 +127,29 @@ public class LogParserExtension : Extension() {
 			.filter {
 				it.aborted ||
 					it.hasProblems ||
-					it.getMessages().isNotEmpty() ||
-					it.minecraftVersion != null ||
+					it.getMessages().isNotEmpty() ||					it.minecraftVersion != null ||
 					it.getMods().isNotEmpty()
 			}
 
-		if (logs.isNotEmpty()) {			message.respond(pingInReply = false) {
-				addLogs(logs)				// Add button for mclo.gs upload
+		if (logs.isNotEmpty()) {
+			message.respond(pingInReply = false) {
+				addLogs(logs)
+
+				// Add button for mclo.gs upload
 				components {
 					publicButton {
-						label = "Upload to mclo.gs".toKey()						action {
+						label = "Upload to mclo.gs".toKey()
+						action {
 							if (logs.size == 1) {
 								val log = logs.first()
 								val uploadUrl = mclogsUploadService.uploadLog(log)
 								
-								if (uploadUrl != null) {
-									// Edit the original message to replace the upload button with a link button
-									edit {
-										addLogs(logs)
-										components {
-											publicButton {
-												label = "View on mclo.gs".toKey()
-												url = uploadUrl
+								if (uploadUrl != null) {									respond {
+										content = "✅ **Log successfully uploaded to mclo.gs!**"
+										actionRow {											linkButton(uploadUrl) {
+												label = "View on mclo.gs"
 											}
 										}
-									}
-									
-									respond {
-										content = "✅ Log successfully uploaded to mclo.gs!"
 									}
 								} else {
 									respond {
@@ -169,19 +166,6 @@ public class LogParserExtension : Extension() {
 								val successfulUploads = uploadResults.filter { it.second != null }
 								
 								if (successfulUploads.isNotEmpty()) {
-									// Edit the original message to replace upload button with link buttons
-									edit {
-										addLogs(logs)
-										components {
-											successfulUploads.forEach { (index, url) ->
-												publicButton {
-													label = if (logs.size == 1) "View on mclo.gs".toKey() else "View Log ${index + 1}".toKey()
-													url = url!!
-												}
-											}
-										}
-									}
-									
 									val resultMessage = buildString {
 										appendLine("✅ **Upload Results:**")
 										uploadResults.forEach { (index, url) ->
@@ -192,9 +176,14 @@ public class LogParserExtension : Extension() {
 											}
 										}
 									}
-									
-									respond {
+											respond {
 										content = resultMessage
+										actionRow {
+											successfulUploads.forEach { (index, url) ->												linkButton(url!!) {
+													label = if (successfulUploads.size == 1) "View on mclo.gs" else "View Log ${index + 1}"
+												}
+											}
+										}
 									}
 								} else {
 									respond {
