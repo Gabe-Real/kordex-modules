@@ -120,7 +120,6 @@ suspend fun setupQuilt() = ExtensibleBot(DISCORD_TOKEN) {
 			processor(PiracyProcessor())
 			processor(ProblematicLauncherProcessor())
 			// Other additional processors
-			processor(NonQuiltLoaderProcessor())
 			processor(RuleBreakingModProcessor())
 			processor(GabeModProcessor())
 			processor(DuplicateModProcessor())

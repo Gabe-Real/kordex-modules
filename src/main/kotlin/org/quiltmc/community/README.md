@@ -18,4 +18,6 @@ All of which require you to provide the following information:
 - Links to websites your plugin information can be found.
 - 2 or 3 different crashlogs with context of what went wrong and how to fix it.
 
+**Please do not do what ISeal did [here](logs/plugins/powergems/img.png)**
+
 ###### We will get back to you shortly 💖
