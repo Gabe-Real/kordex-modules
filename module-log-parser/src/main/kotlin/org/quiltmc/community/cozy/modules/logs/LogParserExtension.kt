@@ -112,8 +112,12 @@ public class LogParserExtension : Extension() {
 	override suspend fun unload() {
 		scheduler?.shutdown()
 	}
-
 	internal suspend fun handleMessage(message: Message, event: Event) {
+		// Don't respond to bot's own messages to prevent loops
+		if (message.author?.isBot == true) {
+			return
+		}
+		
 		if (message.content.isEmpty() && message.attachments.isEmpty()) {
 			return
 		}
@@ -131,16 +135,18 @@ public class LogParserExtension : Extension() {
 			}
 
 		if (logs.isNotEmpty()) {			message.respond(pingInReply = false) {
-				addLogs(logs)				// Add button for mclo.gs upload
+				addLogs(logs)
+
+				// Add button for mclo.gs upload
 				components {
 					publicButton {
 						label = "Upload to mclo.gs".toKey()
-						
-						action {
+								action {
 							if (logs.size == 1) {
 								val log = logs.first()
 								val uploadUrl = mclogsUploadService.uploadLog(log)
-										respond {
+								
+								respond {
 									if (uploadUrl != null) {
 										content = "✅ Log successfully uploaded to mclo.gs: $uploadUrl"
 									} else {
@@ -157,7 +163,8 @@ public class LogParserExtension : Extension() {
 										uploadResults.add("**Log ${index + 1}:** Failed to upload")
 									}
 								}
-										respond {
+								
+								respond {
 									content = if (uploadResults.any { it.contains("http") }) {
 										"✅ **Upload Results:**\n" + uploadResults.joinToString("\n")
 									} else {
