@@ -14,12 +14,14 @@ import dev.kord.core.entity.Message
 import dev.kord.core.event.Event
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import dev.kord.rest.builder.message.embed
+import dev.kord.rest.builder.message.actionRow
 import dev.kordex.core.DISCORD_GREEN
 import dev.kordex.core.DISCORD_RED
 import dev.kordex.core.DISCORD_YELLOW
 import dev.kordex.core.components.components
 import dev.kordex.core.components.linkButton
 import dev.kordex.core.components.publicButton
+import dev.kordex.core.components.linkButton
 import dev.kordex.core.extensions.Extension
 import dev.kordex.core.extensions.ephemeralSlashCommand
 import dev.kordex.core.i18n.toKey
@@ -114,12 +116,8 @@ public class LogParserExtension : Extension() {
 	override suspend fun unload() {
 		scheduler?.shutdown()
 	}
-	internal suspend fun handleMessage(message: Message, event: Event) {
-		// Don't respond to bot's own messages to prevent loops
-		if (message.author?.isBot == true) {
-			return
-		}
 
+	internal suspend fun handleMessage(message: Message, event: Event) {
 		if (message.content.isEmpty() && message.attachments.isEmpty()) {
 			return
 		}
@@ -131,56 +129,67 @@ public class LogParserExtension : Extension() {
 			.filter {
 				it.aborted ||
 					it.hasProblems ||
-					it.getMessages().isNotEmpty() ||
-					it.minecraftVersion != null ||
+					it.getMessages().isNotEmpty() ||					it.minecraftVersion != null ||
 					it.getMods().isNotEmpty()
 			}
 
-		if (logs.isNotEmpty()) {			message.respond(pingInReply = false) {
+		if (logs.isNotEmpty()) {
+			message.respond(pingInReply = false) {
 				addLogs(logs)
 
 				// Add button for mclo.gs upload
 				components {
 					publicButton {
 						label = "Upload to mclo.gs".toKey()
-						style = ButtonStyle.Secondary
-								action {
+						action {
 							if (logs.size == 1) {
 								val log = logs.first()
 								val uploadUrl = mclogsUploadService.uploadLog(log)
-
-								respond {
-									if (uploadUrl != null) {
-										content = "## 🏓 Log **successfully** uploaded to mclo.gs\n-# Click the button below to view it..."
-
-										components {
-											linkButton {
-												label = "View".toKey()
-												style = ButtonStyle.Link
-												url = "$uploadUrl"
+								
+								if (uploadUrl != null) {									respond {
+										content = "✅ **Log successfully uploaded to mclo.gs!**"
+										actionRow {											linkButton(uploadUrl) {
+												label = "View on mclo.gs"
 											}
 										}
-
-									} else {
-										content = "## 📌 **Failed** to upload log to mclo.gs. Please try again later."
+									}
+								} else {
+									respond {
+										content = "❌ Failed to upload log to mclo.gs. Please try again later."
 									}
 								}
 							} else {
-								val uploadResults = mutableListOf<String>()
+								val uploadResults = mutableListOf<Pair<Int, String?>>()
 								logs.forEachIndexed { index, log ->
 									val uploadUrl = mclogsUploadService.uploadLog(log)
-									if (uploadUrl != null) {
-										uploadResults.add("**Log ${index + 1}:** $uploadUrl")
-									} else {
-										uploadResults.add("**Log ${index + 1}:** Failed to upload")
-									}
+									uploadResults.add(index to uploadUrl)
 								}
-
-								respond {
-									content = if (uploadResults.any { it.contains("http") }) {
-										"**Upload Results:**\n" + uploadResults.joinToString("\n")
-									} else {
-										"Failed to upload all logs to mclo.gs. Please try again later."
+								
+								val successfulUploads = uploadResults.filter { it.second != null }
+								
+								if (successfulUploads.isNotEmpty()) {
+									val resultMessage = buildString {
+										appendLine("✅ **Upload Results:**")
+										uploadResults.forEach { (index, url) ->
+											if (url != null) {
+												appendLine("**Log ${index + 1}:** Successfully uploaded")
+											} else {
+												appendLine("**Log ${index + 1}:** Failed to upload")
+											}
+										}
+									}
+											respond {
+										content = resultMessage
+										actionRow {
+											successfulUploads.forEach { (index, url) ->												linkButton(url!!) {
+													label = if (successfulUploads.size == 1) "View on mclo.gs" else "View Log ${index + 1}"
+												}
+											}
+										}
+									}
+								} else {
+									respond {
+										content = "❌ Failed to upload all logs to mclo.gs. Please try again later."
 									}
 								}
 							}
