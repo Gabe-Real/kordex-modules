@@ -1,6 +1,6 @@
 FROM openjdk:17-jdk-slim
 
-COPY build/libs/RtuuyDiscord-*-all.jar /usr/local/lib/RtuuyDiscord.jar
+COPY build/libs/cozy-crashes-*-all.jar /usr/local/lib/cozy-crashes.jar
 
 RUN mkdir /bot
 RUN mkdir /bot/data
@@ -11,4 +11,4 @@ WORKDIR /bot
 VOLUME /bot/data
 VOLUME /bot/plugins
 
-ENTRYPOINT ["java", "-Xms2G", "-Xmx2G", "-jar", "/usr/local/lib/RtuuyDiscord.jar"]
+ENTRYPOINT ["java", "-Xms2G", "-Xmx2G", "-jar", "/usr/local/lib/cozy-crashes.jar"]

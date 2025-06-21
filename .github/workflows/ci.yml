@@ -247,11 +247,10 @@ jobs:
             ```bash
             docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}
             ```
-            
-            ### JAR
+              ### JAR
             Download the attached JAR files and run with:
             ```bash
-            java -jar Rtuuy-*-all.jar
+            java -jar cozy-crashes-*-all.jar
             ```
           artifacts: |
             build/libs/*-all.jar

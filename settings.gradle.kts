@@ -11,7 +11,7 @@ pluginManagement {
 	}
 }
 
-rootProject.name = "RtuuyDiscord"
+rootProject.name = "cozy-crashes"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
