@@ -14,6 +14,11 @@ public class DefaultEventHandler(private val extension: LogParserExtension) : Ev
 	override suspend fun setup(): Unit = with(extension) {
 		event<MessageCreateEvent> {
 			action {
+				// Don't respond to bot messages to prevent loops
+				if (event.message.author?.isBot == true) {
+					return@action
+				}
+				
 				handleMessage(event.message, event)
 			}
 		}
