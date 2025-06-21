@@ -9,6 +9,7 @@
 package org.quiltmc.community.cozy.modules.logs
 
 import com.charleskorn.kaml.Yaml
+import dev.kord.common.entity.ButtonStyle
 import dev.kord.core.entity.Message
 import dev.kord.core.event.Event
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
@@ -18,6 +19,7 @@ import dev.kordex.core.DISCORD_GREEN
 import dev.kordex.core.DISCORD_RED
 import dev.kordex.core.DISCORD_YELLOW
 import dev.kordex.core.components.components
+import dev.kordex.core.components.linkButton
 import dev.kordex.core.components.publicButton
 import dev.kordex.core.components.linkButton
 import dev.kordex.core.extensions.Extension
@@ -53,7 +55,7 @@ public class LogParserExtension : Extension() {
 	private var scheduler: Scheduler? = null
 
 	private val configUrl: String = envOrNull("PASTEBIN_CONFIG_URL")
-		?: "https://raw.githubusercontent.com/QuiltMC/cozy-discord/root/module-log-parser/pastebins.yml"
+		?: "https://raw.githubusercontent.com/Gabe-Real/Cozy-crashes/refs/heads/master/module-log-parser/pastebins.yml"
 
 	private val taskDelay: Long = envOrNull("PASTEBIN_REFRESH_MINS")?.toLong()
 		?: 60
@@ -329,9 +331,9 @@ public class LogParserExtension : Extension() {
 							LoaderType.Bungeecord,
 							LoaderType.Waterfall
 						)
-						
+
 						val isPluginPlatform = pluginPlatforms.any { log.getLoaderVersion(it) != null }
-						
+
 						log.getLoaders()
 							.toList()
 							.sortedBy { it.first.name }
