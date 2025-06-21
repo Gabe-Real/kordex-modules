@@ -9,6 +9,7 @@
 package org.quiltmc.community.cozy.modules.logs
 
 import com.charleskorn.kaml.Yaml
+import dev.kord.common.entity.ButtonStyle
 import dev.kord.core.entity.Message
 import dev.kord.core.event.Event
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
@@ -17,6 +18,7 @@ import dev.kordex.core.DISCORD_GREEN
 import dev.kordex.core.DISCORD_RED
 import dev.kordex.core.DISCORD_YELLOW
 import dev.kordex.core.components.components
+import dev.kordex.core.components.linkButton
 import dev.kordex.core.components.publicButton
 import dev.kordex.core.extensions.Extension
 import dev.kordex.core.extensions.ephemeralSlashCommand
@@ -51,7 +53,7 @@ public class LogParserExtension : Extension() {
 	private var scheduler: Scheduler? = null
 
 	private val configUrl: String = envOrNull("PASTEBIN_CONFIG_URL")
-		?: "https://raw.githubusercontent.com/QuiltMC/cozy-discord/root/module-log-parser/pastebins.yml"
+		?: "https://raw.githubusercontent.com/Gabe-Real/Cozy-crashes/refs/heads/master/module-log-parser/pastebins.yml"
 
 	private val taskDelay: Long = envOrNull("PASTEBIN_REFRESH_MINS")?.toLong()
 		?: 60
@@ -117,7 +119,7 @@ public class LogParserExtension : Extension() {
 		if (message.author?.isBot == true) {
 			return
 		}
-		
+
 		if (message.content.isEmpty() && message.attachments.isEmpty()) {
 			return
 		}
@@ -141,16 +143,26 @@ public class LogParserExtension : Extension() {
 				components {
 					publicButton {
 						label = "Upload to mclo.gs".toKey()
+						style = ButtonStyle.Secondary
 								action {
 							if (logs.size == 1) {
 								val log = logs.first()
 								val uploadUrl = mclogsUploadService.uploadLog(log)
-								
+
 								respond {
 									if (uploadUrl != null) {
-										content = "✅ Log successfully uploaded to mclo.gs: $uploadUrl"
+										content = "## 🏓 Log **successfully** uploaded to mclo.gs\n-# Click the button below to view it..."
+
+										components {
+											linkButton {
+												label = "View".toKey()
+												style = ButtonStyle.Link
+												url = "$uploadUrl"
+											}
+										}
+
 									} else {
-										content = "❌ Failed to upload log to mclo.gs. Please try again later."
+										content = "## 📌 **Failed** to upload log to mclo.gs. Please try again later."
 									}
 								}
 							} else {
@@ -163,12 +175,12 @@ public class LogParserExtension : Extension() {
 										uploadResults.add("**Log ${index + 1}:** Failed to upload")
 									}
 								}
-								
+
 								respond {
 									content = if (uploadResults.any { it.contains("http") }) {
-										"✅ **Upload Results:**\n" + uploadResults.joinToString("\n")
+										"**Upload Results:**\n" + uploadResults.joinToString("\n")
 									} else {
-										"❌ Failed to upload all logs to mclo.gs. Please try again later."
+										"Failed to upload all logs to mclo.gs. Please try again later."
 									}
 								}
 							}
@@ -310,9 +322,9 @@ public class LogParserExtension : Extension() {
 							LoaderType.Bungeecord,
 							LoaderType.Waterfall
 						)
-						
+
 						val isPluginPlatform = pluginPlatforms.any { log.getLoaderVersion(it) != null }
-						
+
 						log.getLoaders()
 							.toList()
 							.sortedBy { it.first.name }
