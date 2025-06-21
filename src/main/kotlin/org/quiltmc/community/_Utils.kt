@@ -279,7 +279,7 @@ suspend fun AboutBuilder.addGeneral(name: String, desc: String) {
 					label = "Ko-fi"
 				}
 
-				linkButton("https://github.com/Gabe-Real/Rtuuy-discord") {
+				linkButton("https://github.com/Gabe-Real/cozy-crashes") {
 					label = "Source Code"
 				}
 
