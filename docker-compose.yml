@@ -1,12 +1,12 @@
 version: "3"
 services:
-  rtuuy-discord:
-    image: ghcr.io/gabe-real/rtuuy-discord:latest
+  cozy-crashes:
+    image: ghcr.io/gabe-real/cozy-crashes:latest
     platform: linux/arm64
-    container_name: rtuuy-discord
+    container_name: cozy-crashes
     restart: always
     volumes:
-      - "rtuuy-discord-data:/data"
+      - "cozy-crashes-data:/data"
 
     environment:
       - "DB_URL=${DB_URL}"
@@ -14,12 +14,12 @@ services:
       - "TOKEN=${TOKEN}"
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "com.centurylinklabs.watchtower.scope=rtuuy-discord"
+      - "com.centurylinklabs.watchtower.scope=cozy-crashes"
   watchtower:
     image: containrrr/watchtower
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 60 --cleanup --rolling-restart --scope rtuuy-discord --label-enable
+    command: --interval 60 --cleanup --rolling-restart --scope cozy-crashes --label-enable
     restart: always
     environment:
       - WATCHTOWER_POLL_INTERVAL=60
