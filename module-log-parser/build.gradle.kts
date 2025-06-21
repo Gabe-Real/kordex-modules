@@ -12,6 +12,7 @@ plugins {
 
 dependencies {
 	implementation(libs.ktor.client.cio)
+	implementation(libs.kx.ser)
 
 	implementation(libs.autolink)
 	implementation(libs.flexver)
