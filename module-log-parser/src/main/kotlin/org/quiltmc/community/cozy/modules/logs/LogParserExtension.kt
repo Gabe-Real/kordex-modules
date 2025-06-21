@@ -112,12 +112,8 @@ public class LogParserExtension : Extension() {
 	override suspend fun unload() {
 		scheduler?.shutdown()
 	}
+
 	internal suspend fun handleMessage(message: Message, event: Event) {
-		// Don't respond to bot's own messages to prevent loops
-		if (message.author?.isBot == true) {
-			return
-		}
-		
 		if (message.content.isEmpty() && message.attachments.isEmpty()) {
 			return
 		}
@@ -135,40 +131,74 @@ public class LogParserExtension : Extension() {
 			}
 
 		if (logs.isNotEmpty()) {			message.respond(pingInReply = false) {
-				addLogs(logs)
-
-				// Add button for mclo.gs upload
+				addLogs(logs)				// Add button for mclo.gs upload
 				components {
 					publicButton {
-						label = "Upload to mclo.gs".toKey()
-								action {
+						label = "Upload to mclo.gs".toKey()						action {
 							if (logs.size == 1) {
 								val log = logs.first()
 								val uploadUrl = mclogsUploadService.uploadLog(log)
 								
-								respond {
-									if (uploadUrl != null) {
-										content = "✅ Log successfully uploaded to mclo.gs: $uploadUrl"
-									} else {
+								if (uploadUrl != null) {
+									// Edit the original message to replace the upload button with a link button
+									edit {
+										addLogs(logs)
+										components {
+											publicButton {
+												label = "View on mclo.gs".toKey()
+												url = uploadUrl
+											}
+										}
+									}
+									
+									respond {
+										content = "✅ Log successfully uploaded to mclo.gs!"
+									}
+								} else {
+									respond {
 										content = "❌ Failed to upload log to mclo.gs. Please try again later."
 									}
 								}
 							} else {
-								val uploadResults = mutableListOf<String>()
+								val uploadResults = mutableListOf<Pair<Int, String?>>()
 								logs.forEachIndexed { index, log ->
 									val uploadUrl = mclogsUploadService.uploadLog(log)
-									if (uploadUrl != null) {
-										uploadResults.add("**Log ${index + 1}:** $uploadUrl")
-									} else {
-										uploadResults.add("**Log ${index + 1}:** Failed to upload")
-									}
+									uploadResults.add(index to uploadUrl)
 								}
 								
-								respond {
-									content = if (uploadResults.any { it.contains("http") }) {
-										"✅ **Upload Results:**\n" + uploadResults.joinToString("\n")
-									} else {
-										"❌ Failed to upload all logs to mclo.gs. Please try again later."
+								val successfulUploads = uploadResults.filter { it.second != null }
+								
+								if (successfulUploads.isNotEmpty()) {
+									// Edit the original message to replace upload button with link buttons
+									edit {
+										addLogs(logs)
+										components {
+											successfulUploads.forEach { (index, url) ->
+												publicButton {
+													label = if (logs.size == 1) "View on mclo.gs".toKey() else "View Log ${index + 1}".toKey()
+													url = url!!
+												}
+											}
+										}
+									}
+									
+									val resultMessage = buildString {
+										appendLine("✅ **Upload Results:**")
+										uploadResults.forEach { (index, url) ->
+											if (url != null) {
+												appendLine("**Log ${index + 1}:** Successfully uploaded")
+											} else {
+												appendLine("**Log ${index + 1}:** Failed to upload")
+											}
+										}
+									}
+									
+									respond {
+										content = resultMessage
+									}
+								} else {
+									respond {
+										content = "❌ Failed to upload all logs to mclo.gs. Please try again later."
 									}
 								}
 							}

@@ -14,11 +14,6 @@ public class PKEventHandler(private val extension: LogParserExtension) : EventHa
 	override suspend fun setup(): Unit = with(extension) {
 		event<PKMessageCreateEvent> {
 			action {
-				// Don't respond to bot messages to prevent loops
-				if (event.message.author?.isBot == true) {
-					return@action
-				}
-				
 				handleMessage(event.message, event)
 			}
 		}
