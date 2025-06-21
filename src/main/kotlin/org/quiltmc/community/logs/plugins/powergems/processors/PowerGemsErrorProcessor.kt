@@ -13,9 +13,6 @@ import org.quiltmc.community.cozy.modules.logs.types.LogProcessor
 private val POWERGEMS_CONFIG_ERROR_REGEX =
 	"""\[PowerGems] (?:WARN|ERROR|SEVERE): (.+)""".toRegex()
 
-private val POWERGEMS_PLUGIN_DISABLE_REGEX =
-	"""\[PowerGems] Disabling PowerGems (.+)""".toRegex()
-
 private val POWERGEMS_DEPENDENCY_ERROR_REGEX =
 	"""\[PowerGems] (.+) dependency not found""".toRegex()
 
@@ -37,25 +34,8 @@ private val POWERGEMS_PERMISSION_ERROR_REGEX =
 public class PowerGemsErrorProcessor : LogProcessor() {
 	override val identifier: String = "powergems_error_processor"
 	override val order: Order = Order.Earlier
-
+	
 	override suspend fun process(log: Log) {
-		// Check for plugin disable
-		val pluginDisable = POWERGEMS_PLUGIN_DISABLE_REGEX.find(log.content)
-		if (pluginDisable != null) {
-			val version = pluginDisable.groupValues[1]
-			log.addMessage(
-				"**PowerGems Plugin Disabled** \n" +
-					"PowerGems $version has been disabled. Check the logs above for the cause. " +
-					"Common causes include:\n" +
-					"• Missing SealLib dependency\n" +
-					"• Configuration errors\n" +
-					"• Database connection issues\n" +
-					"• Incompatible server version"
-			)
-			log.hasProblems = true
-			return
-		}
-
 		// Check for dependency errors
 		val dependencyError = POWERGEMS_DEPENDENCY_ERROR_REGEX.find(log.content)
 		if (dependencyError != null) {

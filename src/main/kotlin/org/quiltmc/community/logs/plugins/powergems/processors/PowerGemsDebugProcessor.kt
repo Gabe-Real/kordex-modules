@@ -29,7 +29,7 @@ private val POWERGEMS_VERSION_REGEX =
 	"""PowerGems-([0-9.]+(?:-[A-Z0-9]+)?)\.jar//""".toRegex()
 
 private val SEALLIB_VERSION_REGEX =
-	"""SealLib \(([0-9.]+(?:-[A-Z0-9]+)?)\)""".toRegex()
+	"""SealLib \(([0-9.]+(?:-[A-Z0-9]+)?)\)|Enabling SealLib v([0-9.]+(?:-[A-Z0-9]+)?)""".toRegex()
 
 private val POWERGEMS_CONFIG_DUMP_REGEX =
 	"""\[SealUtils] Dump from: ([a-zA-Z]+) -> ([a-zA-Z]+): (.+)""".toRegex()
@@ -38,7 +38,7 @@ private val POWERGEMS_MANAGER_DUMP_REGEX =
 	"""\[SealUtils] Dump from: ([a-zA-Z]+) -> ([a-zA-Z]+): (.+)""".toRegex()
 
 private val POWERGEMS_PLUGIN_VERSION_REGEX =
-	"""\[PowerGems] PowerGems v([0-9.]+(?:-[A-Z0-9]+)?)""".toRegex()
+	"""\[PowerGems] PowerGems v([0-9.]+(?:-[A-Z0-9]+)?)|Enabling PowerGems v([0-9.]+(?:-[A-Z0-9]+)?)""".toRegex()
 
 private val POWERGEMS_COMMAND_ERROR_REGEX =
 	"""\[PowerGems] Loading server plugin PowerGems v([0-9.]+(?:-[A-Z0-9]+)?)""".toRegex()
@@ -47,7 +47,7 @@ private val POWERGEMS_VERSION_REQUIREMENT_REGEX =
 	"""Powergems requires Seallib version ([0-9.]+(?:\.[0-9]+)*)""".toRegex()
 
 private val POWERGEMS_PLUGIN_DISABLED_REGEX =
-	"""PowerGems Plugin Disabled""".toRegex()
+	"""Disabling PowerGems v([0-9.]+(?:-[A-Z0-9]+)?)""".toRegex()
 
 // Additional error patterns based on source code analysis
 private val POWERGEMS_DEPENDENCY_ERROR_REGEX =
@@ -80,18 +80,23 @@ private val POWERGEMS_UPDATE_ERROR_REGEX =
 public class PowerGemsDebugProcessor : LogProcessor() {
 	override val identifier: String = "powergems_debug_processor"
 	override val order: Order = Order.Earlier
+	
 	override suspend fun process(log: Log) {
 		val debugException = POWERGEMS_DEBUG_EXCEPTION_REGEX.find(log.content)
 		val fakeException = POWERGEMS_FAKE_EXCEPTION_REGEX.find(log.content)
 		val errorMessage = POWERGEMS_SEALUTILS_ERROR_REGEX.find(log.content)?.groupValues?.get(1)
 		val exceptionMessage = POWERGEMS_EXCEPTION_MESSAGE_REGEX.find(log.content)?.groupValues?.get(1)
 		val hasStacktrace = POWERGEMS_STACKTRACE_REGEX.find(log.content) != null
-		val powerGemsVersion = POWERGEMS_VERSION_REGEX.find(log.content)?.groupValues?.get(1)
-			?: POWERGEMS_PLUGIN_VERSION_REGEX.find(log.content)?.groupValues?.get(1)
-		val sealLibVersion = SEALLIB_VERSION_REGEX.find(log.content)?.groupValues?.get(1)
+		val powerGemsVersionMatch = POWERGEMS_VERSION_REGEX.find(log.content)
+			?: POWERGEMS_PLUGIN_VERSION_REGEX.find(log.content)
+		val powerGemsVersion = powerGemsVersionMatch?.groupValues?.get(1)?.takeIf { it.isNotEmpty() }
+			?: powerGemsVersionMatch?.groupValues?.get(2)?.takeIf { it.isNotEmpty() }
+		val sealLibVersionMatch = SEALLIB_VERSION_REGEX.find(log.content)
+		val sealLibVersion = sealLibVersionMatch?.groupValues?.get(1)?.takeIf { it.isNotEmpty() }
+			?: sealLibVersionMatch?.groupValues?.get(2)?.takeIf { it.isNotEmpty() }
 		val configDumps = POWERGEMS_CONFIG_DUMP_REGEX.findAll(log.content).toList()
 		val hasVersionRequirementMessage = POWERGEMS_VERSION_REQUIREMENT_REGEX.find(log.content) != null
-		val isPluginDisabled = POWERGEMS_PLUGIN_DISABLED_REGEX.find(log.content) != null
+		val pluginDisabled = POWERGEMS_PLUGIN_DISABLED_REGEX.find(log.content)
 
 		// Check for additional error types
 		val dependencyError = POWERGEMS_DEPENDENCY_ERROR_REGEX.find(log.content)
@@ -103,7 +108,6 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 		val configError = POWERGEMS_CONFIG_ERROR_REGEX.find(log.content)
 		val commandMessage = POWERGEMS_COMMAND_MESSAGE_REGEX.find(log.content)
 		val updateError = POWERGEMS_UPDATE_ERROR_REGEX.find(log.content)
-
 		// Handle fake debug exceptions
 		if (fakeException != null && errorMessage == "FAKE_EXCEPTION") {
 			log.addMessage(
@@ -113,7 +117,34 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 					"If you're experiencing actual issues, please run the debug command to help identify the problem."
 			)
 			return // Don't mark as problem since this is intentional
-		}		// Handle real PowerGems exceptions
+		}		// Handle plugin disabled scenarios
+		if (pluginDisabled != null) {
+			val disabledVersion = pluginDisabled.groupValues[1]
+			val disableIndex = pluginDisabled.range.first			// Check if this is during server shutdown by looking ONLY backwards from the disable message
+			// Look for explicit shutdown indicators within 1000 characters BEFORE the disable message
+			val contextStart = maxOf(0, disableIndex - 1000)
+			val contextualContent = log.content.substring(contextStart, disableIndex)
+			
+			// Only consider it a shutdown if we see explicit shutdown messages BEFORE the disable
+			// This prevents false positives when errors occur and then user stops server
+			val isServerShutdown = contextualContent.contains("Stopping server", ignoreCase = true) || 
+									contextualContent.contains("Server shutdown", ignoreCase = true) ||
+									contextualContent.contains("/stop", ignoreCase = true)
+			
+			if (!isServerShutdown) {
+				// Only show message if it's NOT during normal server shutdown
+				val messageBuilder = StringBuilder("**PowerGems Plugin Disabled** \n")
+				messageBuilder.append("PowerGems version: `$disabledVersion`\n")
+				sealLibVersion?.let { messageBuilder.append("SealLib version: `$it`\n") }
+				messageBuilder.append("\nPowerGems seems to be disabled. Check above for exceptions.")
+				
+				log.addMessage(messageBuilder.toString())
+				log.hasProblems = true
+			}
+			// If it's during server shutdown, don't show any message - this is normal behavior
+		}
+
+		// Handle real PowerGems exceptions
 		if (debugException != null && fakeException == null) {
 			val exceptionClass = debugException.groupValues[1]
 			val messageBuilder = StringBuilder("**PowerGems Exception Detected** \n")
@@ -186,19 +217,8 @@ public class PowerGemsDebugProcessor : LogProcessor() {
 
 			log.addMessage(messageBuilder.toString())
 			log.hasProblems = true		}
-
-		// Handle plugin disabled scenarios - only add context if no other diagnostic info was provided
-		if (isPluginDisabled && debugException == null && hasVersionRequirementMessage) {
-			// The log already shows the version requirement message, so just add helpful next steps
-			log.addMessage(
-				"**PowerGems Troubleshooting** \n" +
-					"PowerGems has been disabled due to a dependency issue. " +
-					"To resolve this:\n" +
-					"1. Update SealLib to the required version shown above\n" +
-					"2. Restart your server\n" +
-					"3. Check that both plugins are compatible with your Minecraft version"
-			)
-			log.hasProblems = true		}
+		// Handle plugin disabled scenarios - removed as this is normal behavior
+		// Note: Plugin disable messages are handled in the main exception processing above
 
 		// Handle dependency errors (missing SealLib)
 		if (dependencyError != null) {
