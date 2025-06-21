@@ -16,7 +16,11 @@ import dev.kord.rest.builder.message.embed
 import dev.kordex.core.DISCORD_GREEN
 import dev.kordex.core.DISCORD_RED
 import dev.kordex.core.DISCORD_YELLOW
+import dev.kordex.core.components.components
+import dev.kordex.core.components.publicButton
 import dev.kordex.core.extensions.Extension
+import dev.kordex.core.extensions.ephemeralSlashCommand
+import dev.kordex.core.i18n.toKey
 import dev.kordex.core.utils.capitalizeWords
 import dev.kordex.core.utils.envOrNull
 import dev.kordex.core.utils.respond
@@ -36,6 +40,7 @@ import org.quiltmc.community.cozy.modules.logs.events.DefaultEventHandler
 import org.quiltmc.community.cozy.modules.logs.events.EventHandler
 import org.quiltmc.community.cozy.modules.logs.events.PKEventHandler
 import org.quiltmc.community.cozy.modules.logs.types.BaseLogHandler
+import org.quiltmc.community.cozy.modules.logs.services.MclogsUploadService
 import java.net.URI
 import java.net.URL
 import kotlin.time.Duration.Companion.minutes
@@ -57,6 +62,7 @@ public class LogParserExtension : Extension() {
 
 	internal val client: HttpClient = HttpClient(CIO)
 	internal lateinit var pastebinConfig: PastebinConfig
+	private lateinit var mclogsUploadService: MclogsUploadService
 
 	private lateinit var eventHandler: EventHandler
 
@@ -66,6 +72,7 @@ public class LogParserExtension : Extension() {
 
 		scheduler = Scheduler()
 		pastebinConfig = getPastebinConfig()
+		mclogsUploadService = MclogsUploadService(client)
 
 		scheduler?.schedule(taskDelay.minutes, repeat = true) {
 			pastebinConfig = getPastebinConfig()
@@ -84,7 +91,21 @@ public class LogParserExtension : Extension() {
 		eventHandler.setup()
 
 		config.getRetrievers().forEach { it.setup() }
-		config.getProcessors().forEach { it.setup() }
+		config.getProcessors().forEach { it.setup() }		// Add slash command for uploading logs
+		ephemeralSlashCommand {
+			name = "upload-log".toKey()
+			description = "Upload log content to mclo.gs for easy sharing".toKey()
+
+			action {
+				respond {
+					content = "🔄 To upload a log to mclo.gs:\n" +
+						"1. Post your log file or paste the log content in a message\n" +
+						"2. I'll analyze it and show you the results\n" +
+						"3. Look for the tip message about mclo.gs upload!\n\n" +
+						"*Feature coming soon: Direct upload functionality!*"
+				}
+			}
+		}
 	}
 
 	override suspend fun unload() {
@@ -108,11 +129,52 @@ public class LogParserExtension : Extension() {
 					it.getMods().isNotEmpty()
 			}
 
-//			.filter { it.aborted || it.hasProblems || it.getMessages().isNotEmpty() }
-
-		if (logs.isNotEmpty()) {
+//			.filter { it.aborted || it.hasProblems || it.getMessages().isNotEmpty() }		if (logs.isNotEmpty()) {
 			message.respond(pingInReply = false) {
 				addLogs(logs)
+						// Add button for mclo.gs upload
+				components {
+					publicButton {
+						label = "Upload to mclo.gs".toKey()
+						
+						action {
+							if (logs.size == 1) {
+								val log = logs.first()
+								val uploadUrl = mclogsUploadService.uploadLog(log)
+								
+								respond {
+									if (uploadUrl != null) {
+										content = "✅ Log successfully uploaded to mclo.gs: $uploadUrl"
+									} else {
+										content = "❌ Failed to upload log to mclo.gs. Please try again later."
+									}
+								}
+							} else {
+								respond {
+									content = "📋 Found ${logs.size} logs. Uploading all to mclo.gs..."
+								}
+								
+								val uploadResults = mutableListOf<String>()
+								logs.forEachIndexed { index, log ->
+									val uploadUrl = mclogsUploadService.uploadLog(log)
+									if (uploadUrl != null) {
+										uploadResults.add("**Log ${index + 1}:** $uploadUrl")
+									} else {
+										uploadResults.add("**Log ${index + 1}:** Failed to upload")
+									}
+								}
+								
+								edit {
+									content = if (uploadResults.any { it.contains("http") }) {
+										"✅ **Upload Results:**\n" + uploadResults.joinToString("\n")
+									} else {
+										"❌ Failed to upload all logs to mclo.gs. Please try again later."
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
