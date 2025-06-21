@@ -141,21 +141,24 @@ public class LogParserExtension : Extension() {
 				components {
 					publicButton {
 						label = "Upload to mclo.gs".toKey()
+						style = ButtonStyle.Secondary
 						action {
 							if (logs.size == 1) {
 								val log = logs.first()
 								val uploadUrl = mclogsUploadService.uploadLog(log)
-								
-								if (uploadUrl != null) {									respond {
-										content = "✅ **Log successfully uploaded to mclo.gs!**"
-										actionRow {											linkButton(uploadUrl) {
+
+								if (uploadUrl != null) {
+									respond {
+										content = "## 🏓 Log successfully uploaded to mclo.gs\n-# Click the button below to view it..."
+										actionRow {
+											linkButton(uploadUrl) {
 												label = "View on mclo.gs"
 											}
 										}
 									}
 								} else {
 									respond {
-										content = "❌ Failed to upload log to mclo.gs. Please try again later."
+										content = "## 📌 Failed to upload log to mclo.gs. Please try again later."
 									}
 								}
 							} else {
@@ -164,12 +167,12 @@ public class LogParserExtension : Extension() {
 									val uploadUrl = mclogsUploadService.uploadLog(log)
 									uploadResults.add(index to uploadUrl)
 								}
-								
+
 								val successfulUploads = uploadResults.filter { it.second != null }
-								
+
 								if (successfulUploads.isNotEmpty()) {
 									val resultMessage = buildString {
-										appendLine("✅ **Upload Results:**")
+										appendLine("## 📝 **Upload Results:**")
 										uploadResults.forEach { (index, url) ->
 											if (url != null) {
 												appendLine("**Log ${index + 1}:** Successfully uploaded")
@@ -189,7 +192,7 @@ public class LogParserExtension : Extension() {
 									}
 								} else {
 									respond {
-										content = "❌ Failed to upload all logs to mclo.gs. Please try again later."
+										content = "## 📌 Failed to upload log to mclo.gs. Please try again later."
 									}
 								}
 							}

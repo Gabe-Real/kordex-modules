@@ -24,7 +24,7 @@ class InformationExtension : Extension() {
 		"1380642800953200791/log-parser-process.png?ex=68449f4e&is=68434dce&" +
 		"hm=19326c67aad17378bc137731d1b73ad7b182899ecb9b1a210adfeb484de2898a&)" +
 		"\nOtherwise, here is the link to the github repository where everything else " +
-		"takes place: [Github](https://github.com/Gabe-Real/Rtuuy-discord/tree/master/module-log-parser)"
+		"takes place: [Github](https://github.com/Gabe-Real/Cozy-crashes/tree/master/module-log-parser)"
 
 	val unsupported = "As we are a plural, inclusive and legitimate community, there are " +
 		"some loaders, launchers, mods ect that we may not support. Here are the main ones:" +
