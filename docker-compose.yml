@@ -25,4 +25,4 @@ services:
       - WATCHTOWER_POLL_INTERVAL=60
 
 volumes:
-  rtuuy-discord-data:
+  cozy-crashes-data:
