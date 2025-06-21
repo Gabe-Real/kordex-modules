@@ -178,11 +178,17 @@ public class LogParserExtension : Extension() {
 											}
 										}
 									}
-											respond {
+									
+									respond {
 										content = resultMessage
-										actionRow {
-											successfulUploads.forEach { (index, url) ->												linkButton(url!!) {
-													label = if (successfulUploads.size == 1) "View on mclo.gs" else "View Log ${index + 1}"
+										
+										// Split buttons into chunks of 5 (Discord's limit per action row)
+										successfulUploads.chunked(5).forEach { chunk ->
+											actionRow {
+												chunk.forEach { (index, url) ->
+													linkButton(url!!) {
+														label = if (successfulUploads.size == 1) "View on mclo.gs" else "View Log ${index + 1}"
+													}
 												}
 											}
 										}
