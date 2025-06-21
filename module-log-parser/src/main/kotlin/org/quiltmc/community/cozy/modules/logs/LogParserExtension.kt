@@ -89,9 +89,10 @@ public class LogParserExtension : Extension() {
 		}
 
 		eventHandler.setup()
-
 		config.getRetrievers().forEach { it.setup() }
-		config.getProcessors().forEach { it.setup() }		// Add slash command for uploading logs
+		config.getProcessors().forEach { it.setup() }
+
+		// Add slash command for uploading logs
 		ephemeralSlashCommand {
 			name = "upload-log".toKey()
 			description = "Upload log content to mclo.gs for easy sharing".toKey()
@@ -129,10 +130,10 @@ public class LogParserExtension : Extension() {
 					it.getMods().isNotEmpty()
 			}
 
-//			.filter { it.aborted || it.hasProblems || it.getMessages().isNotEmpty() }		if (logs.isNotEmpty()) {
-			message.respond(pingInReply = false) {
+		if (logs.isNotEmpty()) {			message.respond(pingInReply = false) {
 				addLogs(logs)
-						// Add button for mclo.gs upload
+
+				// Add button for mclo.gs upload
 				components {
 					publicButton {
 						label = "Upload to mclo.gs".toKey()
