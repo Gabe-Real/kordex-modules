@@ -20,9 +20,7 @@ class InformationExtension : Extension() {
 	val logparser = "The log parsing system is made of many different files and extensions, " +
 		"mainly focusing on parsing and processing the uploaded file." +
 		"\n\nFor reference, here is an image showing how the system actually works: " +
-		"[Image](https://cdn.discordapp.com/attachments/1377978022526849115/" +
-		"1380642800953200791/log-parser-process.png?ex=68449f4e&is=68434dce&" +
-		"hm=19326c67aad17378bc137731d1b73ad7b182899ecb9b1a210adfeb484de2898a&)" +
+		"[Image](https://github.com/Gabe-Real/Cozy-crashes/blob/master/module-log-parser/process.drawio.png)" +
 		"\nOtherwise, here is the link to the github repository where everything else " +
 		"takes place: [Github](https://github.com/Gabe-Real/Cozy-crashes/tree/master/module-log-parser)"
 
