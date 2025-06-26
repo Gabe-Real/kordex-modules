@@ -273,13 +273,44 @@ public class MinecraftExtension : Extension() {
 					}
 
 					// Resolve the channel and validate it supports messaging
-					val targetChannel = when (val channelArg = arguments.channel) {
-						is TopGuildMessageChannel -> channelArg
-						is TextChannel -> channelArg
-						is NewsChannel -> channelArg
+					val channelArg = arguments.channel
+					logger.info { "Channel type received: ${channelArg::class.qualifiedName}" }
+					
+					// Handle both direct Channel types and ResolvedChannel wrapper
+					val actualChannel = when (channelArg) {
+						is ResolvedChannel -> {
+							logger.info { "Got ResolvedChannel, extracting inner channel" }
+							// Try to access the channel property directly using Kotlin's property access
+							try {
+								// Use suspend function to resolve the channel
+								channelArg.asChannel()
+							} catch (e: Exception) {
+								logger.error(e) { "Failed to resolve channel from ResolvedChannel" }
+								channelArg
+							}
+						}
+						else -> channelArg
+					}
+					
+					logger.info { "Actual channel type: ${actualChannel::class.qualifiedName}" }
+					
+					val targetChannel = when (actualChannel) {
+						is TopGuildMessageChannel -> {
+							logger.info { "Matched as TopGuildMessageChannel" }
+							actualChannel
+						}
+						is TextChannel -> {
+							logger.info { "Matched as TextChannel" }
+							actualChannel
+						}
+						is NewsChannel -> {
+							logger.info { "Matched as NewsChannel" }
+							actualChannel
+						}
 						else -> {
+							logger.warn { "Unsupported channel type: ${actualChannel::class.qualifiedName}" }
 							respond { 
-								content = "❌ The selected channel (${channelArg::class.simpleName}) is not supported. Please select a text channel."
+								content = "❌ The selected channel (${actualChannel::class.simpleName}) is not supported. Please select a text channel."
 							}
 							return@action
 						}
