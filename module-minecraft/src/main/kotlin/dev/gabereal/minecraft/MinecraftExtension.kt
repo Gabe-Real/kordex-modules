@@ -33,7 +33,7 @@ import dev.kordex.core.DISCORD_GREEN
 import dev.kordex.core.checks.hasPermission
 import dev.kordex.core.commands.Arguments
 import dev.kordex.core.commands.application.slash.ephemeralSubCommand
-import dev.kordex.core.commands.converters.impl.channel
+import dev.kordex.core.commands.converters.impl.channel as channelConverter
 import dev.kordex.core.commands.converters.impl.message
 import dev.kordex.core.commands.converters.impl.optionalRole
 import dev.kordex.core.commands.converters.impl.optionalString
@@ -276,41 +276,31 @@ public class MinecraftExtension : Extension() {
 					val channelArg = arguments.channel
 					logger.info { "Channel type received: ${channelArg::class.qualifiedName}" }
 					
-					// Handle both direct Channel types and ResolvedChannel wrapper
-					val actualChannel = when (channelArg) {
-						is ResolvedChannel -> {
-							logger.info { "Got ResolvedChannel, extracting inner channel" }
-							// Try to access the channel property directly using Kotlin's property access
-							try {
-								// Use suspend function to resolve the channel
-								channelArg.asChannel()
-							} catch (e: Exception) {
-								logger.error(e) { "Failed to resolve channel from ResolvedChannel" }
-								channelArg
-							}
-						}
-						else -> channelArg
-					}
-					
-					logger.info { "Actual channel type: ${actualChannel::class.qualifiedName}" }
-					
-					val targetChannel = when (actualChannel) {
+					val targetChannel = when (channelArg) {
 						is TopGuildMessageChannel -> {
-							logger.info { "Matched as TopGuildMessageChannel" }
-							actualChannel
+							logger.info { "Direct match as TopGuildMessageChannel" }
+							channelArg
 						}
 						is TextChannel -> {
-							logger.info { "Matched as TextChannel" }
-							actualChannel
+							logger.info { "Direct match as TextChannel" }
+							channelArg
 						}
 						is NewsChannel -> {
-							logger.info { "Matched as NewsChannel" }
-							actualChannel
+							logger.info { "Direct match as NewsChannel" }
+							channelArg
+						}
+						is ResolvedChannel -> {
+							logger.info { "Got ResolvedChannel, need to handle it differently" }
+							// For ResolvedChannel, we need to accept it for now and handle the error message appropriately
+							respond { 
+								content = "❌ Please try selecting the channel again. If this persists, the channel type may not be supported."
+							}
+							return@action
 						}
 						else -> {
-							logger.warn { "Unsupported channel type: ${actualChannel::class.qualifiedName}" }
+							logger.warn { "Completely unsupported channel type: ${channelArg::class.qualifiedName}" }
 							respond { 
-								content = "❌ The selected channel (${actualChannel::class.simpleName}) is not supported. Please select a text channel."
+								content = "❌ The selected channel (${channelArg::class.simpleName}) is not supported. Please select a text channel."
 							}
 							return@action
 						}
@@ -721,7 +711,7 @@ public class MinecraftExtension : Extension() {
 
 	@OptIn(KordPreview::class)
 	public class NotificationSetupArguments : Arguments() {
-		public val channel: Channel by channel {
+		public val channel: Channel by channelConverter {
 			name = "channel".toKey()
 			description = "Channel to send Minecraft update notifications to".toKey()
 		}
