@@ -23,6 +23,14 @@ dependencies {
 	implementation(libs.logging)
 	implementation(libs.semver)
 
+	// Database dependencies
+	implementation("org.mariadb.jdbc:mariadb-java-client:3.3.2")
+	implementation("com.zaxxer:HikariCP:5.1.0")
+	implementation("org.jetbrains.exposed:exposed-core:0.48.0")
+	implementation("org.jetbrains.exposed:exposed-dao:0.48.0")
+	implementation("org.jetbrains.exposed:exposed-jdbc:0.48.0")
+	implementation("org.jetbrains.exposed:exposed-kotlin-datetime:0.48.0")
+
 	implementation(platform(libs.kotlin.bom))
 	implementation(libs.kotlin.stdlib)
 }

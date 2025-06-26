@@ -9,6 +9,8 @@ package dev.gabereal.minecraft
 import dev.gabereal.minecraft.collections.PatchNote
 import dev.gabereal.minecraft.collections.PatchNoteEntries
 import dev.gabereal.minecraft.collections.PatchNoteEntry
+import dev.gabereal.minecraft.database.DatabaseConfig
+import dev.gabereal.minecraft.database.MinecraftNotificationService
 import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.Permission
 import dev.kord.common.entity.Snowflake
@@ -17,6 +19,7 @@ import dev.kord.core.behavior.edit
 import dev.kord.core.builder.components.emoji
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.ReactionEmoji
+import dev.kord.core.entity.Role
 import dev.kord.core.entity.channel.NewsChannel
 import dev.kord.core.entity.channel.TextChannel
 import dev.kord.core.entity.channel.TopGuildMessageChannel
@@ -28,7 +31,9 @@ import dev.kordex.core.DISCORD_GREEN
 import dev.kordex.core.checks.hasPermission
 import dev.kordex.core.commands.Arguments
 import dev.kordex.core.commands.application.slash.ephemeralSubCommand
+import dev.kordex.core.commands.converters.impl.channel
 import dev.kordex.core.commands.converters.impl.message
+import dev.kordex.core.commands.converters.impl.optionalRole
 import dev.kordex.core.commands.converters.impl.optionalString
 import dev.kordex.core.commands.converters.impl.string
 import dev.kordex.core.extensions.Extension
@@ -92,153 +97,296 @@ public class MinecraftExtension : Extension() {
 
 	@OptIn(KordPreview::class)
 	override suspend fun setup() {
+		// Initialize database
+		DatabaseConfig.init()
+		
 		populateVersions()
 
 		checkTask = scheduler.schedule(CHECK_DELAY, callback = ::checkTask)
 
-			ephemeralSlashCommand {
-				name = "mc".toKey()
-				description = "Commands related to Minecraft updates".toKey()
+		ephemeralSlashCommand {
+			name = "mc".toKey()
+			description = "Commands related to Minecraft updates".toKey()
 
-				allowInDms = false
+			allowInDms = false
 
-				guild(guildId)
+			guild(guildId)
 
-				ephemeralSubCommand(::CheckArguments) {
-					name = "get".toKey()
-					description = "Retrieve the patch notes for a given Minecraft version, or the latest if not supplied".toKey()
+			ephemeralSubCommand(::CheckArguments) {
+				name = "get".toKey()
+				description = "Retrieve the patch notes for a given Minecraft version, or the latest if not supplied".toKey()
 
-					action {
-						if (!::currentEntries.isInitialized) {
-							respond { content = "Still setting up - try again a bit later!" }
-							return@action
-						}
+				action {
+					if (!::currentEntries.isInitialized) {
+						respond { content = "Still setting up - try again a bit later!" }
+						return@action
+					}
 
-						val patch = if (arguments.version == null) {
-							currentEntries.entries.first()
-						} else {
-							currentEntries.entries.firstOrNull { it.version.equals(arguments.version, true) }
-						}
+					val patch = if (arguments.version == null) {
+						currentEntries.entries.first()
+					} else {
+						currentEntries.entries.firstOrNull { it.version.equals(arguments.version, true) }
+					}
 
-						if (patch == null) {
-							respond { content = "Unknown version supplied: `${arguments.version}`" }
-							return@action
-						}
+					if (patch == null) {
+						respond { content = "Unknown version supplied: `${arguments.version}`" }
+						return@action
+					}
 
-						respond {
-							patchNotes(patch.get())
-						}
+					respond {
+						patchNotes(patch.get())
 					}
 				}
+			}
 
-				ephemeralSubCommand {
-					name = "versions".toKey()
-					description = "Get a list of patch note versions.".toKey()
+			ephemeralSubCommand {
+				name = "versions".toKey()
+				description = "Get a list of patch note versions.".toKey()
 
-					action {
-						if (!::currentEntries.isInitialized) {
-							respond { content = "Still setting up - try again a bit later!" }
+				action {
+					if (!::currentEntries.isInitialized) {
+						respond { content = "Still setting up - try again a bit later!" }
 
-							return@action
-						}
+						return@action
+					}
 
-						editingPaginator {
-							timeoutSeconds = PAGINATOR_TIMEOUT
+					editingPaginator {
+						timeoutSeconds = PAGINATOR_TIMEOUT
 
-							knownVersions.chunked(CHUNK_SIZE).forEach { chunk ->
-								page(
-									Page {
-										title = "Patch note versions"
-										color = DISCORD_FUCHSIA
+						knownVersions.chunked(CHUNK_SIZE).forEach { chunk ->
+							page(
+								Page {
+									title = "Patch note versions"
+									color = DISCORD_FUCHSIA
 
-										description = chunk.joinToString("\n") { "**»** `$it`" }
+									description = chunk.joinToString("\n") { "**»** `$it`" }
 
-										footer {
-											text = "${currentEntries.entries.size} versions"
-										}
+									footer {
+										text = "${currentEntries.entries.size} versions"
 									}
-								)
-							}
-						}.send()
-					}
+								}
+							)
+						}
+					}.send()
+				}
+			}
+
+			ephemeralSubCommand(::CheckArguments) {
+				name = "forget".toKey()
+				description = "Forget a version (the last one by default), allowing it to be relayed again.".toKey()
+
+				check {
+					hasPermission(Permission.Administrator)
 				}
 
-				ephemeralSubCommand(::CheckArguments) {
-					name = "forget".toKey()
-					description = "Forget a version (the last one by default), allowing it to be relayed again.".toKey()
-
-					check {
-							hasPermission(Permission.Administrator)
-						}
-
-					action {
-						if (!::currentEntries.isInitialized) {
-							respond { content = "Still setting up - try again a bit later!" }
-							return@action
-						}
-
-						val version = if (arguments.version == null) {
-							currentEntries.entries.first().version
-						} else {
-							currentEntries.entries.firstOrNull {
-								it.version.equals(arguments.version, true)
-							}?.version
-						}
-
-						if (version == null) {
-							respond { content = "Unknown version supplied: `${arguments.version}`" }
-							return@action
-						}
-
-						knownVersions.remove(version)
-
-						respond { content = "Version forgotten: `$version`" }
+				action {
+					if (!::currentEntries.isInitialized) {
+						respond { content = "Still setting up - try again a bit later!" }
+						return@action
 					}
 
-				ephemeralSubCommand(::UpdateArguments) {
-					name = "update".toKey()
-					description = "Edit the given message to replace its embed. Useful when formatting code changes.".toKey()
-
-					check {
-							hasPermission(Permission.Administrator)
-						}
-
-					action {
-						if (!::currentEntries.isInitialized) {
-							respond { content = "Still setting up - try again a bit later!" }
-							return@action
-						}
-
-						val entry = currentEntries.entries.firstOrNull {
+					val version = if (arguments.version == null) {
+						currentEntries.entries.first().version
+					} else {
+						currentEntries.entries.firstOrNull {
 							it.version.equals(arguments.version, true)
-						}
-
-						if (entry == null) {
-							respond { content = "Unknown version supplied: `${arguments.version}`" }
-							return@action
-						}
-
-						arguments.message.edit {
-							patchNotes(entry.get())
-						}
-
-						respond { content = "Message edit to match version: `${entry.version}`" }
+						}?.version
 					}
+
+					if (version == null) {
+						respond { content = "Unknown version supplied: `${arguments.version}`" }
+						return@action
+					}
+
+					knownVersions.remove(version)
+
+					respond { content = "Version forgotten: `$version`" }
+				}
+			}
+
+			ephemeralSubCommand(::UpdateArguments) {
+				name = "update".toKey()
+				description = "Edit the given message to replace its embed. Useful when formatting code changes.".toKey()
+
+				check {
+					hasPermission(Permission.Administrator)
 				}
 
-				ephemeralSubCommand {
-					name = "run".toKey()
-					description = "Run the check task now, without waiting for it.".toKey()
+				action {
+					if (!::currentEntries.isInitialized) {
+						respond { content = "Still setting up - try again a bit later!" }
+						return@action
+					}
 
-					check {
-							hasPermission(Permission.Administrator)
+					val entry = currentEntries.entries.firstOrNull {
+						it.version.equals(arguments.version, true)
+					}
+
+					if (entry == null) {
+						respond { content = "Unknown version supplied: `${arguments.version}`" }
+						return@action
+					}
+
+					arguments.message.edit {
+						patchNotes(entry.get())
+					}
+
+					respond { content = "Message edit to match version: `${entry.version}`" }
+				}
+			}
+
+			ephemeralSubCommand {
+				name = "run".toKey()
+				description = "Run the check task now, without waiting for it.".toKey()
+
+				check {
+					hasPermission(Permission.Administrator)
+				}
+
+				action {
+					respond { content = "Checking now..." }
+
+					checkTask?.callNow()
+				}
+			}
+
+			// New notification configuration commands
+			ephemeralSubCommand(::NotificationSetupArguments) {
+				name = "setup".toKey()
+				description = "Configure Minecraft update notifications for this server".toKey()
+
+				check {
+					hasPermission(Permission.ManageGuild)
+				}
+
+				action {
+					val guildId = guild?.id ?: run {
+						respond { content = "This command can only be used in a server!" }
+						return@action
+					}
+
+					val config = MinecraftNotificationService.setConfig(
+						guildId = guildId,
+						channelId = arguments.channel.id,
+						pingRoleId = arguments.role?.id
+					)
+
+					val roleText = if (config.pingRoleId != null) {
+						" and will ping <@&${config.pingRoleId}>"
+					} else {
+						""
+					}
+
+					respond {
+						content = "✅ Minecraft update notifications configured!\n" +
+								"Updates will be sent to <#${config.channelId}>$roleText"
+					}
+				}
+			}
+
+			ephemeralSubCommand {
+				name = "disable".toKey()
+				description = "Disable Minecraft update notifications for this server".toKey()
+
+				check {
+					hasPermission(Permission.ManageGuild)
+				}
+
+				action {
+					val guildId = guild?.id ?: run {
+						respond { content = "This command can only be used in a server!" }
+						return@action
+					}
+
+					val success = MinecraftNotificationService.setEnabled(guildId, false)
+
+					if (success) {
+						respond { content = "✅ Minecraft update notifications disabled for this server." }
+					} else {
+						respond { content = "❌ No notification configuration found for this server." }
+					}
+				}
+			}
+
+			ephemeralSubCommand {
+				name = "enable".toKey()
+				description = "Enable Minecraft update notifications for this server".toKey()
+
+				check {
+					hasPermission(Permission.ManageGuild)
+				}
+
+				action {
+					val guildId = guild?.id ?: run {
+						respond { content = "This command can only be used in a server!" }
+						return@action
+					}
+
+					val success = MinecraftNotificationService.setEnabled(guildId, true)
+
+					if (success) {
+						respond { content = "✅ Minecraft update notifications enabled for this server." }
+					} else {
+						respond { content = "❌ No notification configuration found for this server. Use `/mc setup` first." }
+					}
+				}
+			}
+
+			ephemeralSubCommand {
+				name = "status".toKey()
+				description = "Check the current notification configuration for this server".toKey()
+
+				action {
+					val guildId = guild?.id ?: run {
+						respond { content = "This command can only be used in a server!" }
+						return@action
+					}
+
+					val config = MinecraftNotificationService.getConfig(guildId)
+
+					if (config == null) {
+						respond {
+							content = "❌ No notification configuration found for this server.\n" +
+									"Use `/mc setup` to configure notifications."
 						}
+						return@action
+					}
 
+					val statusEmoji = if (config.enabled) "✅" else "❌"
+					val statusText = if (config.enabled) "Enabled" else "Disabled"
+					val roleText = if (config.pingRoleId != null) {
+						"\n**Ping Role:** <@&${config.pingRoleId}>"
+					} else {
+						"\n**Ping Role:** None"
+					}
 
-					action {
-						respond { content = "Checking now..." }
+					respond {
+						content = "$statusEmoji **Minecraft Notifications:** $statusText\n" +
+								"**Channel:** <#${config.channelId}>$roleText"
+					}
+				}
+			}
 
-						checkTask?.callNow()
+			ephemeralSubCommand {
+				name = "remove".toKey()
+				description = "Remove notification configuration for this server".toKey()
+
+				check {
+					hasPermission(Permission.ManageGuild)
+				}
+
+				action {
+					val guildId = guild?.id ?: run {
+						respond { content = "This command can only be used in a server!" }
+						return@action
+					}
+
+					val success = MinecraftNotificationService.removeConfig(guildId)
+
+					if (success) {
+						respond { content = "✅ Minecraft notification configuration removed for this server." }
+					} else {
+						respond { content = "❌ No notification configuration found for this server." }
 					}
 				}
 			}
@@ -272,19 +420,25 @@ public class MinecraftExtension : Extension() {
 	}
 
 	@Suppress("TooGenericExceptionCaught")
-	public suspend fun relayUpdate(patchNote: PatchNote): Any =
-		CHANNELS
-			.map {
-				try {
-					kord.getChannelOf<TopGuildMessageChannel>(it)
-				} catch (t: Throwable) {
-					logger.warn(t) { "Unable to get channel of ID: ${it.value}" }
-
-					null
-				}
+	public suspend fun relayUpdate(patchNote: PatchNote): Any {
+		val configs = MinecraftNotificationService.getAllEnabledConfigs()
+		
+		if (configs.isEmpty()) {
+			logger.info { "No enabled notification configurations found, skipping relay" }
+			return Unit
+		}
+		
+		configs.forEach { config ->
+			try {
+				val channel = kord.getChannelOf<TopGuildMessageChannel>(Snowflake(config.channelId))
+				channel?.relay(patchNote, config.pingRoleId?.let { Snowflake(it) })
+			} catch (t: Throwable) {
+				logger.warn(t) { "Unable to send notification to channel ${config.channelId} in guild ${config.guildId}" }
 			}
-			.filterNotNull()
-			.forEach { it.relay(patchNote) }
+		}
+		
+		return Unit
+	}
 
 	public fun String.formatHTML(): String {
 		var result = StringEscapeUtils.unescapeHtml4(trim('\n'))
@@ -423,11 +577,11 @@ public class MinecraftExtension : Extension() {
 		}
 	}
 
-	private suspend fun TopGuildMessageChannel.relay(patchNote: PatchNote) {
+	private suspend fun TopGuildMessageChannel.relay(patchNote: PatchNote, pingRoleId: Snowflake? = null) {
 		val message = createMessage {
-			// If we are in the community guild, ping the update role
-			if (guildId == Snowflake(1144564082234621994)) {
-				content = "<@&$MINECRAFT_UPDATE_PING_ROLE>"
+			// Ping the configured role if one is set
+			if (pingRoleId != null) {
+				content = "<@&$pingRoleId>"
 			}
 
 			patchNotes(patchNote)
@@ -439,25 +593,31 @@ public class MinecraftExtension : Extension() {
 			patchNote.title
 		}
 
-		if (guildId == Snowflake(1144564082234621994)) {
-			when (this) {
-				is TextChannel -> startPublicThreadWithMessage(
+		when (this) {
+			is TextChannel -> startPublicThreadWithMessage(
+				message.id, title
+			) { reason = "Thread created for Minecraft update" }
+
+			is NewsChannel -> {
+				startPublicThreadWithMessage(
 					message.id, title
 				) { reason = "Thread created for Minecraft update" }
 
-				is NewsChannel -> {
-					startPublicThreadWithMessage(
-						message.id, title
-					) { reason = "Thread created for Minecraft update" }
-
-					message.publish()
-				}
+				message.publish()
 			}
 		}
 	}
 
 	public fun getLatest(): PatchNoteEntry =
 		currentEntries.entries.first()
+
+	override suspend fun unload() {
+		checkTask?.cancel()
+		client.close()
+		DatabaseConfig.close()
+		
+		super.unload()
+	}
 
 	public suspend fun PatchNoteEntry.get(): PatchNote =
 		client.get("$BASE_URL/$contentPath").body<PatchNote>()
@@ -480,6 +640,22 @@ public class MinecraftExtension : Extension() {
 		public val message: Message by message {
 			name = "message".toKey()
 			description = "Message to edit with a new embed".toKey()
+		}
+	}
+
+	@OptIn(KordPreview::class)
+	public class NotificationSetupArguments : Arguments() {
+		private val _channel by channel {
+			name = "channel".toKey()
+			description = "Channel to send Minecraft update notifications to".toKey()
+		}
+		
+		public val channel: TopGuildMessageChannel
+			get() = _channel as TopGuildMessageChannel
+
+		public val role: Role? by optionalRole {
+			name = "role".toKey()
+			description = "Role to ping when updates are posted (optional)".toKey()
 		}
 	}
 }

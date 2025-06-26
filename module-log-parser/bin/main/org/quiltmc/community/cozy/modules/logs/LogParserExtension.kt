@@ -9,14 +9,22 @@
 package org.quiltmc.community.cozy.modules.logs
 
 import com.charleskorn.kaml.Yaml
+import dev.kord.common.entity.ButtonStyle
 import dev.kord.core.entity.Message
 import dev.kord.core.event.Event
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import dev.kord.rest.builder.message.embed
+import dev.kord.rest.builder.message.actionRow
 import dev.kordex.core.DISCORD_GREEN
 import dev.kordex.core.DISCORD_RED
 import dev.kordex.core.DISCORD_YELLOW
+import dev.kordex.core.components.components
+import dev.kordex.core.components.linkButton
+import dev.kordex.core.components.publicButton
+import dev.kordex.core.components.linkButton
 import dev.kordex.core.extensions.Extension
+import dev.kordex.core.extensions.ephemeralSlashCommand
+import dev.kordex.core.i18n.toKey
 import dev.kordex.core.utils.capitalizeWords
 import dev.kordex.core.utils.envOrNull
 import dev.kordex.core.utils.respond
@@ -36,6 +44,7 @@ import org.quiltmc.community.cozy.modules.logs.events.DefaultEventHandler
 import org.quiltmc.community.cozy.modules.logs.events.EventHandler
 import org.quiltmc.community.cozy.modules.logs.events.PKEventHandler
 import org.quiltmc.community.cozy.modules.logs.types.BaseLogHandler
+import org.quiltmc.community.cozy.modules.logs.services.MclogsUploadService
 import java.net.URI
 import java.net.URL
 import kotlin.time.Duration.Companion.minutes
@@ -46,7 +55,7 @@ public class LogParserExtension : Extension() {
 	private var scheduler: Scheduler? = null
 
 	private val configUrl: String = envOrNull("PASTEBIN_CONFIG_URL")
-		?: "https://raw.githubusercontent.com/QuiltMC/cozy-discord/root/module-log-parser/pastebins.yml"
+		?: "https://raw.githubusercontent.com/Gabe-Real/Cozy-crashes/refs/heads/master/module-log-parser/pastebins.yml"
 
 	private val taskDelay: Long = envOrNull("PASTEBIN_REFRESH_MINS")?.toLong()
 		?: 60
@@ -57,6 +66,7 @@ public class LogParserExtension : Extension() {
 
 	internal val client: HttpClient = HttpClient(CIO)
 	internal lateinit var pastebinConfig: PastebinConfig
+	private lateinit var mclogsUploadService: MclogsUploadService
 
 	private lateinit var eventHandler: EventHandler
 
@@ -66,6 +76,7 @@ public class LogParserExtension : Extension() {
 
 		scheduler = Scheduler()
 		pastebinConfig = getPastebinConfig()
+		mclogsUploadService = MclogsUploadService(client)
 
 		scheduler?.schedule(taskDelay.minutes, repeat = true) {
 			pastebinConfig = getPastebinConfig()
@@ -82,9 +93,24 @@ public class LogParserExtension : Extension() {
 		}
 
 		eventHandler.setup()
-
 		config.getRetrievers().forEach { it.setup() }
 		config.getProcessors().forEach { it.setup() }
+
+		// Add slash command for uploading logs
+		ephemeralSlashCommand {
+			name = "upload-log".toKey()
+			description = "Upload log content to mclo.gs for easy sharing".toKey()
+
+			action {
+				respond {
+					content = "🔄 To upload a log to mclo.gs:\n" +
+						"1. Post your log file or paste the log content in a message\n" +
+						"2. I'll analyze it and show you the results\n" +
+						"3. Look for the tip message about mclo.gs upload!\n\n" +
+						"*Feature coming soon: Direct upload functionality!*"
+				}
+			}
+		}
 	}
 
 	override suspend fun unload() {
@@ -103,16 +129,82 @@ public class LogParserExtension : Extension() {
 			.filter {
 				it.aborted ||
 					it.hasProblems ||
-					it.getMessages().isNotEmpty() ||
-					it.minecraftVersion != null ||
+					it.getMessages().isNotEmpty() ||					it.minecraftVersion != null ||
 					it.getMods().isNotEmpty()
 			}
-
-//			.filter { it.aborted || it.hasProblems || it.getMessages().isNotEmpty() }
 
 		if (logs.isNotEmpty()) {
 			message.respond(pingInReply = false) {
 				addLogs(logs)
+
+				// Add button for mclo.gs upload
+				components {
+					publicButton {
+						label = "Upload to mclo.gs".toKey()
+						style = ButtonStyle.Secondary
+						action {
+							if (logs.size == 1) {
+								val log = logs.first()
+								val uploadUrl = mclogsUploadService.uploadLog(log)
+
+								if (uploadUrl != null) {
+									respond {
+										content = "## 🏓 Log successfully uploaded to mclo.gs\n-# Click the button below to view it..."
+										actionRow {
+											linkButton(uploadUrl) {
+												label = "View on mclo.gs"
+											}
+										}
+									}
+								} else {
+									respond {
+										content = "## 📌 Failed to upload log to mclo.gs. Please try again later."
+									}
+								}
+							} else {
+								val uploadResults = mutableListOf<Pair<Int, String?>>()
+								logs.forEachIndexed { index, log ->
+									val uploadUrl = mclogsUploadService.uploadLog(log)
+									uploadResults.add(index to uploadUrl)
+								}
+
+								val successfulUploads = uploadResults.filter { it.second != null }
+
+								if (successfulUploads.isNotEmpty()) {
+									val resultMessage = buildString {
+										appendLine("## 📝 **Upload Results:**")
+										uploadResults.forEach { (index, url) ->
+											if (url != null) {
+												appendLine("**Log ${index + 1}:** Successfully uploaded")
+											} else {
+												appendLine("**Log ${index + 1}:** Failed to upload")
+											}
+										}
+									}
+									
+									respond {
+										content = resultMessage
+										
+										// Split buttons into chunks of 5 (Discord's limit per action row)
+										successfulUploads.chunked(5).forEach { chunk ->
+											actionRow {
+												chunk.forEach { (index, url) ->
+													linkButton(url!!) {
+														label = if (successfulUploads.size == 1) "View on mclo.gs" else "View Log ${index + 1}"
+													}
+												}
+											}
+										}
+									}
+								} else {
+									respond {
+										content = "## 📌 Failed to upload log to mclo.gs. Please try again later."
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -248,9 +340,9 @@ public class LogParserExtension : Extension() {
 							LoaderType.Bungeecord,
 							LoaderType.Waterfall
 						)
-						
+
 						val isPluginPlatform = pluginPlatforms.any { log.getLoaderVersion(it) != null }
-						
+
 						log.getLoaders()
 							.toList()
 							.sortedBy { it.first.name }
