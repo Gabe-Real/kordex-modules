@@ -17,6 +17,7 @@ import dev.kord.gateway.PrivilegedIntent
 import dev.kordex.core.ExtensibleBot
 import dev.kordex.core.utils.env
 import dev.kordex.core.utils.envOrNull
+import dev.kordex.modules.func.mappings.extMappings
 import dev.kordex.modules.func.phishing.DetectionAction
 import dev.kordex.modules.func.phishing.extPhishing
 import dev.kordex.modules.pluralkit.extPluralKit
@@ -114,6 +115,7 @@ suspend fun setupQuilt() = ExtensibleBot(DISCORD_TOKEN) {
 	extensions {
 		add(::InformationExtension)
 		extPluralKit()
+		extMappings {  }
 
 		extLogParser {
 			// Bundled non-default processors

@@ -10,6 +10,9 @@ pluginManagement {
 		gradlePluginPortal()
 	}
 }
+plugins {
+	id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
+}
 
 rootProject.name = "cozy-crashes"
 
@@ -17,4 +20,5 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 
 include(":module-log-parser")
-
+include("module-mappings")
+include("module-minecraft")

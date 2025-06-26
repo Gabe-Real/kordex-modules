@@ -63,6 +63,7 @@ kordEx {
 
 	module("func-phishing")
 	module("func-tags")
+	module("func-mappings")
 	module("func-welcome")
 
 	module("pluralkit")
