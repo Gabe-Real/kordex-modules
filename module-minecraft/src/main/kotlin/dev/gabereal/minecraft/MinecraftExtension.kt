@@ -290,12 +290,42 @@ public class MinecraftExtension : Extension() {
 							channelArg
 						}
 						is ResolvedChannel -> {
-							logger.info { "Got ResolvedChannel, need to handle it differently" }
-							// For ResolvedChannel, we need to accept it for now and handle the error message appropriately
-							respond { 
-								content = "❌ Please try selecting the channel again. If this persists, the channel type may not be supported."
+							logger.info { "Got ResolvedChannel, extracting inner channel using reflection" }
+							try {
+								// Use reflection to safely access the channel property
+								val channelField = ResolvedChannel::class.java.getDeclaredField("channel")
+								channelField.isAccessible = true
+								val innerChannel = channelField.get(channelArg) as Channel
+								logger.info { "Extracted inner channel type: ${innerChannel::class.qualifiedName}" }
+								
+								when (innerChannel) {
+									is TopGuildMessageChannel -> {
+										logger.info { "Inner channel is TopGuildMessageChannel" }
+										innerChannel
+									}
+									is TextChannel -> {
+										logger.info { "Inner channel is TextChannel" }
+										innerChannel
+									}
+									is NewsChannel -> {
+										logger.info { "Inner channel is NewsChannel" }
+										innerChannel
+									}
+									else -> {
+										logger.warn { "Inner channel type not supported: ${innerChannel::class.qualifiedName}" }
+										respond { 
+											content = "❌ The selected channel (${innerChannel::class.simpleName}) is not supported. Please select a text channel."
+										}
+										return@action
+									}
+								}
+							} catch (e: Exception) {
+								logger.error(e) { "Failed to extract channel from ResolvedChannel using reflection" }
+								respond { 
+									content = "❌ Failed to process the selected channel. Please try selecting a different channel."
+								}
+								return@action
 							}
-							return@action
 						}
 						else -> {
 							logger.warn { "Completely unsupported channel type: ${channelArg::class.qualifiedName}" }
