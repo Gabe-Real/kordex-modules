@@ -272,14 +272,14 @@ public class MinecraftExtension : Extension() {
 						return@action
 					}
 
-					// Get the channel and validate it supports messaging
-					val targetChannel = when (val ch = arguments.channel) {
-						is TopGuildMessageChannel -> ch
-						is TextChannel -> ch
-						is NewsChannel -> ch
+					// Validate the channel supports messaging
+					val targetChannel = when (arguments.channel) {
+						is TopGuildMessageChannel -> arguments.channel
+						is TextChannel -> arguments.channel
+						is NewsChannel -> arguments.channel
 						else -> {
 							respond { 
-								content = "❌ The selected channel type (${ch::class.simpleName}) is not supported. Please select a text channel." 
+								content = "❌ The selected channel (${arguments.channel::class.simpleName}) is not supported. Please select a text channel."
 							}
 							return@action
 						}
