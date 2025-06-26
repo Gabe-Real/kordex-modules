@@ -7,7 +7,8 @@ services:
     restart: always
     volumes:
       - "cozy-crashes-data:/data"
-
+    networks:
+      - dokploy-network
     environment:
       - "DB_URL=${DB_URL}"
       - "ENVIRONMENT=${ENVIRONMENT:-prod}"
@@ -26,3 +27,7 @@ services:
 
 volumes:
   cozy-crashes-data:
+
+networks:
+  dokploy-network:
+    external: true
