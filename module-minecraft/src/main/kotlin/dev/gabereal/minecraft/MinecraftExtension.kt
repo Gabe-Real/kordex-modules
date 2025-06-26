@@ -20,7 +20,9 @@ import dev.kord.core.builder.components.emoji
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.ReactionEmoji
 import dev.kord.core.entity.Role
+import dev.kord.core.entity.channel.Channel
 import dev.kord.core.entity.channel.NewsChannel
+import dev.kord.core.entity.channel.ResolvedChannel
 import dev.kord.core.entity.channel.TextChannel
 import dev.kord.core.entity.channel.TopGuildMessageChannel
 import dev.kord.rest.builder.message.MessageBuilder
@@ -270,9 +272,15 @@ public class MinecraftExtension : Extension() {
 						return@action
 					}
 
+					// Convert channel to TopGuildMessageChannel with proper error handling
+					val targetChannel = arguments.channel as? TopGuildMessageChannel ?: run {
+						respond { content = "❌ The selected channel must be a text channel that supports messaging!" }
+						return@action
+					}
+
 					val config = MinecraftNotificationService.setConfig(
 						guildId = guildId,
-						channelId = arguments.channel.id,
+						channelId = targetChannel.id,
 						pingRoleId = arguments.role?.id
 					)
 
@@ -675,13 +683,10 @@ public class MinecraftExtension : Extension() {
 
 	@OptIn(KordPreview::class)
 	public class NotificationSetupArguments : Arguments() {
-		private val _channel by channel {
+		public val channel: Channel by channel {
 			name = "channel".toKey()
 			description = "Channel to send Minecraft update notifications to".toKey()
 		}
-		
-		public val channel: TopGuildMessageChannel
-			get() = _channel as TopGuildMessageChannel
 
 		public val role: Role? by optionalRole {
 			name = "role".toKey()
