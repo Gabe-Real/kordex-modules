@@ -97,8 +97,13 @@ public class MinecraftExtension : Extension() {
 
 	@OptIn(KordPreview::class)
 	override suspend fun setup() {
-		// Initialize database
-		DatabaseConfig.init()
+		// Initialize database (non-fatal if it fails)
+		try {
+			DatabaseConfig.init()
+			logger.info { "Database initialized successfully" }
+		} catch (e: Exception) {
+			logger.error(e) { "Failed to initialize database - notification features will be disabled" }
+		}
 		
 		populateVersions()
 
@@ -271,6 +276,13 @@ public class MinecraftExtension : Extension() {
 						pingRoleId = arguments.role?.id
 					)
 
+					if (config == null) {
+						respond { 
+							content = "❌ Failed to configure notifications. The database may be unavailable. Please try again later." 
+						}
+						return@action
+					}
+
 					val roleText = if (config.pingRoleId != null) {
 						" and will ping <@&${config.pingRoleId}>"
 					} else {
@@ -300,10 +312,16 @@ public class MinecraftExtension : Extension() {
 
 					val success = MinecraftNotificationService.setEnabled(guildId, false)
 
-					if (success) {
-						respond { content = "✅ Minecraft update notifications disabled for this server." }
-					} else {
-						respond { content = "❌ No notification configuration found for this server." }
+					when {
+						success == null -> {
+							respond { content = "❌ Failed to update settings. The database may be unavailable. Please try again later." }
+						}
+						success -> {
+							respond { content = "✅ Minecraft update notifications disabled for this server." }
+						}
+						else -> {
+							respond { content = "❌ No notification configuration found for this server." }
+						}
 					}
 				}
 			}
@@ -324,10 +342,16 @@ public class MinecraftExtension : Extension() {
 
 					val success = MinecraftNotificationService.setEnabled(guildId, true)
 
-					if (success) {
-						respond { content = "✅ Minecraft update notifications enabled for this server." }
-					} else {
-						respond { content = "❌ No notification configuration found for this server. Use `/mc setup` first." }
+					when {
+						success == null -> {
+							respond { content = "❌ Failed to update settings. The database may be unavailable. Please try again later." }
+						}
+						success -> {
+							respond { content = "✅ Minecraft update notifications enabled for this server." }
+						}
+						else -> {
+							respond { content = "❌ No notification configuration found for this server. Use `/mc setup` first." }
+						}
 					}
 				}
 			}
@@ -346,7 +370,7 @@ public class MinecraftExtension : Extension() {
 
 					if (config == null) {
 						respond {
-							content = "❌ No notification configuration found for this server.\n" +
+							content = "❌ No notification configuration found for this server or database is unavailable.\n" +
 									"Use `/mc setup` to configure notifications."
 						}
 						return@action
@@ -383,10 +407,16 @@ public class MinecraftExtension : Extension() {
 
 					val success = MinecraftNotificationService.removeConfig(guildId)
 
-					if (success) {
-						respond { content = "✅ Minecraft notification configuration removed for this server." }
-					} else {
-						respond { content = "❌ No notification configuration found for this server." }
+					when {
+						success == null -> {
+							respond { content = "❌ Failed to remove configuration. The database may be unavailable. Please try again later." }
+						}
+						success -> {
+							respond { content = "✅ Minecraft notification configuration removed for this server." }
+						}
+						else -> {
+							respond { content = "❌ No notification configuration found for this server." }
+						}
 					}
 				}
 			}
