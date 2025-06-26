@@ -272,10 +272,17 @@ public class MinecraftExtension : Extension() {
 						return@action
 					}
 
-					// Convert channel to TopGuildMessageChannel with proper error handling
-					val targetChannel = arguments.channel as? TopGuildMessageChannel ?: run {
-						respond { content = "❌ The selected channel must be a text channel that supports messaging!" }
-						return@action
+					// Get the channel and validate it supports messaging
+					val targetChannel = when (val ch = arguments.channel) {
+						is TopGuildMessageChannel -> ch
+						is TextChannel -> ch
+						is NewsChannel -> ch
+						else -> {
+							respond { 
+								content = "❌ The selected channel type (${ch::class.simpleName}) is not supported. Please select a text channel." 
+							}
+							return@action
+						}
 					}
 
 					val config = MinecraftNotificationService.setConfig(
