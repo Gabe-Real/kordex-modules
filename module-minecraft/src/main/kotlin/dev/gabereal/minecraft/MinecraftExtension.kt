@@ -290,64 +290,11 @@ public class MinecraftExtension : Extension() {
 							channelArg
 						}
 						is ResolvedChannel -> {
-							logger.info { "Got ResolvedChannel, attempting to extract inner channel" }
-							
-							// First try to inspect all available fields and methods
-							val clazz = channelArg::class.java
-							logger.info { "ResolvedChannel fields: ${clazz.declaredFields.map { it.name }}" }
-							logger.info { "ResolvedChannel methods: ${clazz.methods.filter { it.name.contains("channel", true) }.map { "${it.name}()" }}" }
-							
+							logger.info { "Got ResolvedChannel, using asChannel() method to extract inner channel" }
 							try {
-								// Try different possible field names
-								val possibleFieldNames = listOf("channel", "resolved", "value", "data", "_channel")
-								var innerChannel: Channel? = null
-								
-								for (fieldName in possibleFieldNames) {
-									try {
-										val field = clazz.getDeclaredField(fieldName)
-										field.isAccessible = true
-										val fieldValue = field.get(channelArg)
-										logger.info { "Field '$fieldName' found with type: ${fieldValue?.javaClass?.name}" }
-										
-										if (fieldValue is Channel) {
-											innerChannel = fieldValue
-											logger.info { "Successfully extracted channel from field '$fieldName'" }
-											break
-										}
-									} catch (e: NoSuchFieldException) {
-										// Field doesn't exist, try next one
-										logger.debug { "Field '$fieldName' not found" }
-									}
-								}
-								
-								if (innerChannel == null) {
-									// Try methods that might return the channel
-									val possibleMethods = listOf("getChannel", "asChannel", "toChannel", "resolve")
-									for (methodName in possibleMethods) {
-										try {
-											val method = clazz.getMethod(methodName)
-											val result = method.invoke(channelArg)
-											if (result is Channel) {
-												innerChannel = result
-												logger.info { "Successfully extracted channel from method '$methodName()'" }
-												break
-											}
-										} catch (e: Exception) {
-											// Method doesn't exist or failed, try next one
-											logger.debug { "Method '$methodName()' not found or failed" }
-										}
-									}
-								}
-								
-								if (innerChannel == null) {
-									logger.error { "Could not extract channel from ResolvedChannel - no suitable field or method found" }
-									respond { 
-										content = "❌ Unable to process the selected channel. This may be a compatibility issue. Please try again or select a different channel."
-									}
-									return@action
-								}
-								
-								logger.info { "Extracted inner channel type: ${innerChannel::class.qualifiedName}" }
+								// Use the asChannel() method that we detected in the logs
+								val innerChannel = channelArg.asChannel()
+								logger.info { "Successfully extracted channel using asChannel(), type: ${innerChannel::class.qualifiedName}" }
 								
 								when (innerChannel) {
 									is TopGuildMessageChannel -> {
@@ -371,11 +318,47 @@ public class MinecraftExtension : Extension() {
 									}
 								}
 							} catch (e: Exception) {
-								logger.error(e) { "Failed to extract channel from ResolvedChannel" }
-								respond { 
-									content = "❌ Failed to process the selected channel. Please try selecting a different channel."
+								logger.error(e) { "Failed to extract channel from ResolvedChannel using asChannel()" }
+								// Try the fallback asChannelOrNull() method
+								try {
+									val innerChannel = channelArg.asChannelOrNull()
+									if (innerChannel != null) {
+										logger.info { "Fallback successful using asChannelOrNull(), type: ${innerChannel::class.qualifiedName}" }
+										when (innerChannel) {
+											is TopGuildMessageChannel -> {
+												logger.info { "Inner channel is TopGuildMessageChannel" }
+												innerChannel
+											}
+											is TextChannel -> {
+												logger.info { "Inner channel is TextChannel" }
+												innerChannel
+											}
+											is NewsChannel -> {
+												logger.info { "Inner channel is NewsChannel" }
+												innerChannel
+											}
+											else -> {
+												logger.warn { "Inner channel type not supported: ${innerChannel::class.qualifiedName}" }
+												respond { 
+													content = "❌ The selected channel (${innerChannel::class.simpleName}) is not supported. Please select a text channel."
+												}
+												return@action
+											}
+										}
+									} else {
+										logger.error { "asChannelOrNull() returned null" }
+										respond { 
+											content = "❌ Failed to process the selected channel. Please try selecting a different channel."
+										}
+										return@action
+									}
+								} catch (fallbackException: Exception) {
+									logger.error(fallbackException) { "Both asChannel() and asChannelOrNull() failed" }
+									respond { 
+										content = "❌ Failed to process the selected channel. Please try selecting a different channel."
+									}
+									return@action
 								}
-								return@action
 							}
 						}
 						else -> {
