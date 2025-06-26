@@ -25,6 +25,7 @@ import org.quiltmc.community.cozy.modules.logs.extLogParser
 import org.quiltmc.community.cozy.modules.logs.processors.PiracyProcessor
 import org.quiltmc.community.cozy.modules.logs.processors.ProblematicLauncherProcessor
 import org.quiltmc.community.extensions.InformationExtension
+import dev.gabereal.minecraft.MinecraftExtension
 import org.quiltmc.community.logs.*
 import org.quiltmc.community.logs.plugins.MissingPluginProcessor
 import org.quiltmc.community.logs.plugins.PluginErrorProcessor
@@ -114,6 +115,7 @@ suspend fun setupQuilt() = ExtensibleBot(DISCORD_TOKEN) {
 	}
 	extensions {
 		add(::InformationExtension)
+		add(::MinecraftExtension)
 		extPluralKit()
 		extMappings {  }
 

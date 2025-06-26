@@ -16,6 +16,7 @@ dependencies {
 	implementation(libs.kx.ser)
 
 	implementation(libs.autolink)
+	implementation(libs.commons.text)
 	implementation(libs.flexver)
 	implementation(libs.jsoup)
 	implementation(libs.kaml)

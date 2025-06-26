@@ -47,6 +47,7 @@ dependencies {
 	implementation(libs.graphql)
 
 	implementation(projects.moduleLogParser)
+	implementation(projects.moduleMinecraft)
 
 }
 

@@ -48,8 +48,7 @@ import io.ktor.client.request.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
-import org.gradle.internal.impldep.org.apache.commons.lang3.StringEscapeUtils
-import org.quiltmc.community.*
+import org.apache.commons.text.StringEscapeUtils
 import kotlin.system.exitProcess
 
 private const val PAGINATOR_TIMEOUT = 60_000L  // One minute
@@ -427,7 +426,7 @@ public class MinecraftExtension : Extension() {
 	private suspend fun TopGuildMessageChannel.relay(patchNote: PatchNote) {
 		val message = createMessage {
 			// If we are in the community guild, ping the update role
-			if (guildId) {
+			if (guildId == Snowflake(1144564082234621994)) {
 				content = "<@&$MINECRAFT_UPDATE_PING_ROLE>"
 			}
 
@@ -440,7 +439,7 @@ public class MinecraftExtension : Extension() {
 			patchNote.title
 		}
 
-		if (guildId === "1144564082234621994") {
+		if (guildId == Snowflake(1144564082234621994)) {
 			when (this) {
 				is TextChannel -> startPublicThreadWithMessage(
 					message.id, title
