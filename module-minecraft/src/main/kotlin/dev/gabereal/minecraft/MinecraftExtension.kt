@@ -290,11 +290,11 @@ public class MinecraftExtension : Extension() {
 							channelArg
 						}
 						is ResolvedChannel -> {
-							logger.info { "Got ResolvedChannel, using asChannel() method to extract inner channel" }
+							logger.info { "Got ResolvedChannel, trying fetchChannel() method to extract inner channel" }
 							try {
-								// Use the asChannel() method that we detected in the logs
-								val innerChannel = channelArg.asChannel()
-								logger.info { "Successfully extracted channel using asChannel(), type: ${innerChannel::class.qualifiedName}" }
+								// Use fetchChannel() method instead of asChannel()
+								val innerChannel = channelArg.fetchChannel()
+								logger.info { "Successfully extracted channel using fetchChannel(), type: ${innerChannel::class.qualifiedName}" }
 								
 								when (innerChannel) {
 									is TopGuildMessageChannel -> {
@@ -318,12 +318,12 @@ public class MinecraftExtension : Extension() {
 									}
 								}
 							} catch (e: Exception) {
-								logger.error(e) { "Failed to extract channel from ResolvedChannel using asChannel()" }
-								// Try the fallback asChannelOrNull() method
+								logger.error(e) { "Failed to extract channel from ResolvedChannel using fetchChannel()" }
+								// Try the fallback fetchChannelOrNull() method
 								try {
-									val innerChannel = channelArg.asChannelOrNull()
+									val innerChannel = channelArg.fetchChannelOrNull()
 									if (innerChannel != null) {
-										logger.info { "Fallback successful using asChannelOrNull(), type: ${innerChannel::class.qualifiedName}" }
+										logger.info { "Fallback successful using fetchChannelOrNull(), type: ${innerChannel::class.qualifiedName}" }
 										when (innerChannel) {
 											is TopGuildMessageChannel -> {
 												logger.info { "Inner channel is TopGuildMessageChannel" }
@@ -346,14 +346,14 @@ public class MinecraftExtension : Extension() {
 											}
 										}
 									} else {
-										logger.error { "asChannelOrNull() returned null" }
+										logger.error { "fetchChannelOrNull() returned null" }
 										respond { 
 											content = "❌ Failed to process the selected channel. Please try selecting a different channel."
 										}
 										return@action
 									}
 								} catch (fallbackException: Exception) {
-									logger.error(fallbackException) { "Both asChannel() and asChannelOrNull() failed" }
+									logger.error(fallbackException) { "Both fetchChannel() and fetchChannelOrNull() failed" }
 									respond { 
 										content = "❌ Failed to process the selected channel. Please try selecting a different channel."
 									}
