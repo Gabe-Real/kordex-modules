@@ -9,10 +9,6 @@
 package dev.gabereal.minecraft
 
 import dev.kord.common.entity.Snowflake
-import dev.kordex.core.DISCORD_BLURPLE
-import dev.kordex.core.DISCORD_GREEN
-import dev.kordex.core.DISCORD_RED
-import dev.kordex.core.utils.env
 import dev.kordex.core.utils.envOrNull
 
 internal val MINECRAFT_UPDATE_CHANNEL_ID = envOrNull("UPDATE_CHANNEL_ID")

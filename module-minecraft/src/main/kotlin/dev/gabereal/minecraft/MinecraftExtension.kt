@@ -106,7 +106,7 @@ public class MinecraftExtension : Extension() {
 		} catch (e: Exception) {
 			logger.error(e) { "Failed to initialize database - notification features will be disabled" }
 		}
-		
+
 		populateVersions()
 
 		checkTask = scheduler.schedule(CHECK_DELAY, callback = ::checkTask)
@@ -275,7 +275,7 @@ public class MinecraftExtension : Extension() {
 					// Resolve the channel and validate it supports messaging
 					val channelArg = arguments.channel
 					logger.info { "Channel type received: ${channelArg::class.qualifiedName}" }
-					
+
 					val targetChannel = when (channelArg) {
 						is TopGuildMessageChannel -> {
 							logger.info { "Direct match as TopGuildMessageChannel" }
@@ -295,7 +295,7 @@ public class MinecraftExtension : Extension() {
 								// Use fetchChannel() method instead of asChannel()
 								val innerChannel = channelArg.fetchChannel()
 								logger.info { "Successfully extracted channel using fetchChannel(), type: ${innerChannel::class.qualifiedName}" }
-								
+
 								when (innerChannel) {
 									is TopGuildMessageChannel -> {
 										logger.info { "Inner channel is TopGuildMessageChannel" }
@@ -311,8 +311,8 @@ public class MinecraftExtension : Extension() {
 									}
 									else -> {
 										logger.warn { "Inner channel type not supported: ${innerChannel::class.qualifiedName}" }
-										respond { 
-											content = "❌ The selected channel (${innerChannel::class.simpleName}) is not supported. Please select a text channel."
+										respond {
+											content = "The selected channel (${innerChannel::class.simpleName}) is not supported. Please select a text channel."
 										}
 										return@action
 									}
@@ -339,23 +339,23 @@ public class MinecraftExtension : Extension() {
 											}
 											else -> {
 												logger.warn { "Inner channel type not supported: ${innerChannel::class.qualifiedName}" }
-												respond { 
-													content = "❌ The selected channel (${innerChannel::class.simpleName}) is not supported. Please select a text channel."
+												respond {
+													content = "The selected channel (${innerChannel::class.simpleName}) is **not supported**. Please select a text channel."
 												}
 												return@action
 											}
 										}
 									} else {
 										logger.error { "fetchChannelOrNull() returned null" }
-										respond { 
-											content = "❌ Failed to process the selected channel. Please try selecting a different channel."
+										respond {
+											content = "**Failed to process** the selected channel. Please try selecting a different channel."
 										}
 										return@action
 									}
 								} catch (fallbackException: Exception) {
 									logger.error(fallbackException) { "Both fetchChannel() and fetchChannelOrNull() failed" }
-									respond { 
-										content = "❌ Failed to process the selected channel. Please try selecting a different channel."
+									respond {
+										content = "**Failed to process** to process the selected channel. Please try selecting a different channel."
 									}
 									return@action
 								}
@@ -363,8 +363,8 @@ public class MinecraftExtension : Extension() {
 						}
 						else -> {
 							logger.warn { "Completely unsupported channel type: ${channelArg::class.qualifiedName}" }
-							respond { 
-								content = "❌ The selected channel (${channelArg::class.simpleName}) is not supported. Please select a text channel."
+							respond {
+								content = "The selected channel (${channelArg::class.simpleName}) is **not supported**. Please select a text channel."
 							}
 							return@action
 						}
@@ -377,8 +377,8 @@ public class MinecraftExtension : Extension() {
 					)
 
 					if (config == null) {
-						respond { 
-							content = "❌ Failed to configure notifications. The database may be unavailable. Please try again later." 
+						respond {
+							content = "**Failed to configure notifications**. The database may be unavailable. Please try again later."
 						}
 						return@action
 					}
@@ -390,7 +390,7 @@ public class MinecraftExtension : Extension() {
 					}
 
 					respond {
-						content = "✅ Minecraft update notifications configured!\n" +
+						content = "Minecraft update notifications configured!\n" +
 								"Updates will be sent to <#${config.channelId}>$roleText"
 					}
 				}
@@ -414,13 +414,13 @@ public class MinecraftExtension : Extension() {
 
 					when {
 						success == null -> {
-							respond { content = "❌ Failed to update settings. The database may be unavailable. Please try again later." }
+							respond { content = "**Failed to update settings**. The database may be unavailable. Please try again later." }
 						}
 						success -> {
-							respond { content = "✅ Minecraft update notifications disabled for this server." }
+							respond { content = "Minecraft update notifications **disabled** for this server." }
 						}
 						else -> {
-							respond { content = "❌ No notification configuration found for this server." }
+							respond { content = "**No notification configuration found** for this server." }
 						}
 					}
 				}
@@ -444,13 +444,13 @@ public class MinecraftExtension : Extension() {
 
 					when {
 						success == null -> {
-							respond { content = "❌ Failed to update settings. The database may be unavailable. Please try again later." }
+							respond { content = "**Failed to update** settings. The database may be unavailable. Please try again later." }
 						}
 						success -> {
-							respond { content = "✅ Minecraft update notifications enabled for this server." }
+							respond { content = "Minecraft update notifications **enabled** for this server." }
 						}
 						else -> {
-							respond { content = "❌ No notification configuration found for this server. Use `/mc setup` first." }
+							respond { content = "**No notification configuration found** for this server. Use `/mc setup` first." }
 						}
 					}
 				}
@@ -470,7 +470,7 @@ public class MinecraftExtension : Extension() {
 
 					if (config == null) {
 						respond {
-							content = "❌ No notification configuration found for this server or database is unavailable.\n" +
+							content = "No notification configuration found for this server or database is unavailable.\n" +
 									"Use `/mc setup` to configure notifications."
 						}
 						return@action
@@ -509,13 +509,13 @@ public class MinecraftExtension : Extension() {
 
 					when {
 						success == null -> {
-							respond { content = "❌ Failed to remove configuration. The database may be unavailable. Please try again later." }
+							respond { content = "**Failed to remove configuration**. The database may be unavailable. Please try again later." }
 						}
 						success -> {
-							respond { content = "✅ Minecraft notification configuration removed for this server." }
+							respond { content = "Minecraft notification configuration removed for this server." }
 						}
 						else -> {
-							respond { content = "❌ No notification configuration found for this server." }
+							respond { content = "**No notification configuration found** for this server." }
 						}
 					}
 				}
@@ -552,12 +552,12 @@ public class MinecraftExtension : Extension() {
 	@Suppress("TooGenericExceptionCaught")
 	public suspend fun relayUpdate(patchNote: PatchNote): Any {
 		val configs = MinecraftNotificationService.getAllEnabledConfigs()
-		
+
 		if (configs.isEmpty()) {
 			logger.info { "No enabled notification configurations found, skipping relay" }
 			return Unit
 		}
-		
+
 		configs.forEach { config ->
 			try {
 				val channel = kord.getChannelOf<TopGuildMessageChannel>(Snowflake(config.channelId))
@@ -566,7 +566,7 @@ public class MinecraftExtension : Extension() {
 				logger.warn(t) { "Unable to send notification to channel ${config.channelId} in guild ${config.guildId}" }
 			}
 		}
-		
+
 		return Unit
 	}
 
@@ -745,7 +745,7 @@ public class MinecraftExtension : Extension() {
 		checkTask?.cancel()
 		client.close()
 		DatabaseConfig.close()
-		
+
 		super.unload()
 	}
 
