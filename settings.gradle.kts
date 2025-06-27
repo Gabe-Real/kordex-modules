@@ -20,10 +20,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 
 include(":module-log-parser")
-include("module-mappings")
 include("module-minecraft")
 include("module-role-sync")
 include("module-moderation")
 include("module-ama")
-include("module-forums")
-include("module-tags")
