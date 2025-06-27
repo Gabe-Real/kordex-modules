@@ -2,6 +2,9 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel target="17">
+      <module name="cozy-crashes.buildSrc" target="21" />
+      <module name="cozy-crashes.buildSrc.main" target="21" />
+      <module name="cozy-crashes.buildSrc.test" target="21" />
       <module name="CozyDiscord.buildSrc" target="21" />
       <module name="CozyDiscord.buildSrc.main" target="21" />
       <module name="CozyDiscord.buildSrc.test" target="21" />
