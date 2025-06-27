@@ -26,6 +26,21 @@ private val FIELD_REGEX =
 	"""java\.lang\.NoSuchFieldError: Class ((?:[^\n.]+[\.\/])*)([^\n.()]+) does not have member field '([^\n]+)'"""
 	.toRegex(RegexOption.IGNORE_CASE)
 
+private val IGNORED_PACKAGE_PREFIXES = listOf(
+	"org.jetbrains.",
+	"java.",
+	"javax.",
+	"kotlin.",
+	"sun.",
+	"com.intellij.",
+	"com.google.",
+	"jdk.",
+	"org.slf4j.",
+	"org.apache."
+)
+
+// TODO: Ignore annotations and unneeded information from backend processors.
+
 public class MissingItemProcessor : LogProcessor() {
 	override val identifier: String = "missing-jvm-elements"
 	override val order: Order = Order.Default
