@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.1.21"
-graphql = "7.1.4"
+graphql = "8.8.1"
 
 autolink = "0.11.0"
 commons-text = "1.11.0"
